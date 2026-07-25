@@ -82,3 +82,25 @@ export function size() {
 export function isEmpty() {
   return items.length === 0;
 }
+
+/**
+ * Replaces the queue's contents with `videoIds` (the library's current
+ * Firestore-confirmed list), keeping the current pointer on the same
+ * video if it's still present. If the previously-current video was
+ * removed, the pointer clamps to the nearest remaining item; if the
+ * list is now empty, the pointer clears (current() returns null).
+ */
+export function syncWith(videoIds) {
+  const previousCurrent = current();
+  items = Array.isArray(videoIds) ? [...videoIds] : [];
+
+  if (items.length === 0) {
+    currentIndex = -1;
+    return;
+  }
+
+  const preservedIndex = previousCurrent !== null ? items.indexOf(previousCurrent) : -1;
+  currentIndex = preservedIndex !== -1
+    ? preservedIndex
+    : Math.min(Math.max(currentIndex, 0), items.length - 1);
+}
