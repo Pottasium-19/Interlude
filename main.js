@@ -22,8 +22,11 @@ import {
   listenToSync,
   resetReadyAndCountdown,
   setPlayerAction,
-  listenToPlayer
+  listenToPlayer,
+  setMyQueueSongs,
+  listenToQueue
 } from "./sync.js";
+
 import {
   renderConnectionStatus,
   renderReadyStatus,
@@ -48,9 +51,12 @@ import {
   syncWith as queueSyncWith,
   current as queueCurrent,
   next as queueNext,
-  previous as queuePrevious
+  previous as queuePrevious,
+  mergeRoundRobin
 } from "./queue.js";
 
+let myLibraryVideoIds = [];
+let stopQueueListener = null;
 let mySlot = null;
 let myUserId = null;
 let myCurrentlyReady = false;
@@ -134,6 +140,14 @@ async function joinRoom() {
 
   const otherSlot = mySlot === "user1" ? "user2" : "user1";
 
+  setMyQueueSongs(mySlot, myLibraryVideoIds).catch((error) =>
+    console.error("Failed to publish library to shared queue:", error)
+  );
+  stopQueueListener = listenToQueue((queueData) => {
+    const merged = mergeRoundRobin(queueData.user1Songs || [], queueData.user2Songs || []);
+    queueSyncWith(merged);
+  });
+
   // Presence: heartbeat for this user, listener for the other user.
   stopHeartbeat = startHeartbeat(myUserId, mySlot, mySessionId);
   stopPresenceListener = listenToPresence(otherSlot, (presence) => {
@@ -194,9 +208,17 @@ const LIBRARY_MESSAGES = {
 function initLibrary() {
   listenToLibrary((songs) => {
     renderLibrary(songs, async (videoId) => {
-      await removeFromLibrary(videoId);
+      const result = await removeFromLibrary(videoId);
+      if (!result.ok) {
+        renderLibraryMessage(LIBRARY_MESSAGES[result.reason] || "Couldn't remove that song — please try again.");
+      }
     });
-    queueSyncWith(songs.map((song) => song.videoId));
+    myLibraryVideoIds = songs.map((song) => song.videoId);
+    if (mySlot) {
+      setMyQueueSongs(mySlot, myLibraryVideoIds).catch((error) =>
+        console.error("Failed to publish library to shared queue:", error)
+      );
+    }
   });
 
   bindLibraryAdd(async (rawInput) => {
@@ -223,7 +245,7 @@ async function handleLeaveRoom() {
     clearInterval(countdownIntervalId);
     countdownIntervalId = null;
   }
-  [stopPresenceListener, stopRoomListener, stopReadyListener, stopSyncListener, stopPlayerListener].forEach(
+  [stopPresenceListener, stopRoomListener, stopReadyListener, stopSyncListener, stopPlayerListener, stopQueueListener].forEach(
     (stop) => stop && stop()
   );
   stopPresenceListener = null;
@@ -231,6 +253,7 @@ async function handleLeaveRoom() {
   stopReadyListener = null;
   stopSyncListener = null;
   stopPlayerListener = null;
+  stopQueueListener = null;
 
   try {
     if (mySlot && myUserId) {
