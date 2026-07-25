@@ -18,6 +18,7 @@ const COUNTDOWN_LEAD_MS = 3000; // countdown starts 3s in the future
 const readyDocRef = doc(db, "rooms", ROOM_ID, "state", "ready");
 const syncDocRef = doc(db, "rooms", ROOM_ID, "state", "sync");
 const playerDocRef = doc(db, "rooms", ROOM_ID, "state", "player");
+const queueDocRef = doc(db, "rooms", ROOM_ID, "state", "queue");
 
 // ---------------------------------------------------------------------
 // Ready system
@@ -108,4 +109,16 @@ export function listenToPlayer(callback) {
 export async function getInitialPlayerState() {
   const snap = await getDoc(playerDocRef);
   return snap.exists() ? snap.data() : { playbackState: "waiting" };
+}
+
+export async function setMyQueueSongs(slot, videoIds) {
+  await setDoc(queueDocRef, { [`${slot}Songs`]: videoIds }, { merge: true });
+}
+
+export function listenToQueue(callback) {
+  return onSnapshot(
+    queueDocRef,
+    (snap) => callback(snap.exists() ? snap.data() : { user1Songs: [], user2Songs: [] }),
+    (error) => console.error("Queue listener error:", error)
+  );
 }
