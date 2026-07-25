@@ -4,13 +4,13 @@
 // and supporting automatic reconnection after a refresh or dropped
 // connection.
 
-import { db } from "./firebase.js";
 import {
   doc,
   runTransaction,
   setDoc,
   onSnapshot,
-  serverTimestamp
+  serverTimestamp,
+  deleteField
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const ROOM_ID = "main-room";
@@ -42,6 +42,10 @@ function storeSlot(slot) {
   localStorage.setItem("interlude_slot", slot);
 }
 
+export function clearStoredSlot() {
+  localStorage.removeItem("interlude_slot");
+}
+
 /**
  * Claims a slot ("user1" or "user2") in the shared room.
  *
@@ -70,23 +74,40 @@ export async function claimSlot() {
     if (data.user1Id === userId) return "user1";
     if (data.user2Id === userId) return "user2";
 
-    // Try to claim the first open slot. The first user to ever create the
-    // room also becomes the initial host (see claimHostIfVacant for how
-    // that responsibility transfers later if they disconnect).
-    if (!data.user1Id) {
+    // All tx reads must happen before any tx writes, so resolve presence
+    // staleness for both slots up front.
+    const user1PresenceSnap = data.user1Id
+      ? await tx.get(doc(db, "rooms", ROOM_ID, "presence", "user1"))
+      : null;
+    const user2PresenceSnap = data.user2Id
+      ? await tx.get(doc(db, "rooms", ROOM_ID, "presence", "user2"))
+      : null;
+
+    const user1Stale =
+      !!data.user1Id &&
+      (!user1PresenceSnap.exists() || isPresenceStale(user1PresenceSnap.data().lastSeen));
+    const user2Stale =
+      !!data.user2Id &&
+      (!user2PresenceSnap.exists() || isPresenceStale(user2PresenceSnap.data().lastSeen));
+
+    // Try to claim the first open (or abandoned) slot. The first user to
+    // ever create the room also becomes the initial host (see
+    // claimHostIfVacant for how that responsibility transfers later if
+    // they disconnect).
+    if (!data.user1Id || user1Stale) {
       tx.set(
         roomDocRef,
         {
           user1Id: userId,
           createdAt: data.createdAt || serverTimestamp(),
-          hostId: data.hostId || userId
+          hostId: user1Stale ? userId : data.hostId || userId
         },
         { merge: true }
       );
       return "user1";
     }
 
-    if (!data.user2Id) {
+    if (!data.user2Id || user2Stale) {
       tx.set(roomDocRef, { user2Id: userId }, { merge: true });
       return "user2";
     }
@@ -118,6 +139,53 @@ export async function claimHostIfVacant(myUserId, currentHostId) {
 
     tx.set(roomDocRef, { hostId: myUserId }, { merge: true });
     return myUserId;
+  });
+}
+
+/**
+ * Releases MY slot (Leave Room). Only releases if this browser's userId
+ * still actually owns that slot — no-op otherwise, so a stale/duplicate
+ * call can't clobber someone else. Reassigns host to the remaining user
+ * if I was host.
+ */
+export async function releaseSlot(slot, userId) {
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(roomDocRef);
+    if (!snap.exists()) return;
+    const data = snap.data();
+    if (data[`${slot}Id`] !== userId) return;
+
+    const otherSlot = slot === "user1" ? "user2" : "user1";
+    const update = { [`${slot}Id`]: deleteField() };
+    if (data.hostId === userId) {
+      update.hostId = data[`${otherSlot}Id`] || deleteField();
+    }
+    tx.set(roomDocRef, update, { merge: true });
+  });
+}
+
+/**
+ * Peer-side cleanup: if `slot`'s presence has gone stale (closed browser,
+ * lost internet, crash — never called releaseSlot), free it. Re-checks
+ * inside the transaction so it's safe to call from a timer.
+ */
+export async function releaseStaleSlot(slot) {
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(roomDocRef);
+    if (!snap.exists()) return;
+    const data = snap.data();
+    if (!data[`${slot}Id`]) return;
+
+    const presenceSnap = await tx.get(doc(db, "rooms", ROOM_ID, "presence", slot));
+    const stale = !presenceSnap.exists() || isPresenceStale(presenceSnap.data().lastSeen);
+    if (!stale) return;
+
+    const otherSlot = slot === "user1" ? "user2" : "user1";
+    const update = { [`${slot}Id`]: deleteField() };
+    if (data.hostId === data[`${slot}Id`]) {
+      update.hostId = data[`${otherSlot}Id`] || deleteField();
+    }
+    tx.set(roomDocRef, update, { merge: true });
   });
 }
 
