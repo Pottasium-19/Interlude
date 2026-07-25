@@ -99,6 +99,27 @@ export function syncWith(videoIds) {
     return;
   }
 
+  /**
+ * Interleaves two ordered video-id lists round-robin (a[0], b[0], a[1], b[1], ...),
+ * skipping a duplicate so it only appears once, at its earliest position.
+ */
+export function mergeRoundRobin(listA = [], listB = []) {
+  const merged = [];
+  const seen = new Set();
+  const max = Math.max(listA.length, listB.length);
+  for (let i = 0; i < max; i++) {
+    if (i < listA.length && !seen.has(listA[i])) {
+      merged.push(listA[i]);
+      seen.add(listA[i]);
+    }
+    if (i < listB.length && !seen.has(listB[i])) {
+      merged.push(listB[i]);
+      seen.add(listB[i]);
+    }
+  }
+  return merged;
+}
+  
   const preservedIndex = previousCurrent !== null ? items.indexOf(previousCurrent) : -1;
   currentIndex = preservedIndex !== -1
     ? preservedIndex
