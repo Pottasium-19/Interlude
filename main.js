@@ -35,6 +35,7 @@ import {
   bindLeaveButton,
   setControlsEnabled
 } from "./ui.js";
+import { initPlayer } from "./youtube.js";
 
 let mySlot = null;
 let myUserId = null;
@@ -75,6 +76,10 @@ async function init() {
   }
 
   const otherSlot = mySlot === "user1" ? "user2" : "user1";
+
+  initPlayer("youtube-player").catch((error) =>
+    console.error("YouTube player init failed:", error)
+  );
 
   // Presence: heartbeat for this user, listener for the other user.
   stopHeartbeat = startHeartbeat(myUserId, mySlot, mySessionId);
