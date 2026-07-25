@@ -99,13 +99,14 @@ export async function add(rawInput) {
   }
 }
 
-/** Removes `videoId` from the library. No-op if it isn't present. */
 export async function remove(videoId) {
-  if (typeof videoId !== "string" || !videoId) return;
+  if (typeof videoId !== "string" || !videoId) return { ok: false, reason: "invalid" };
   try {
     await deleteDoc(doc(songsCollectionRef(), videoId));
+    return { ok: true, videoId };
   } catch (error) {
     console.error("library.js: failed to remove song:", error);
+    return { ok: false, reason: "error" };
   }
 }
 
