@@ -15,6 +15,7 @@ const el = {
   prevBtn: () => document.getElementById("prev-btn"),
   nextBtn: () => document.getElementById("next-btn"),
   leaveBtn: () => document.getElementById("leave-btn"),
+  joinBtn: () => document.getElementById("join-btn"),
   libraryInput: () => document.getElementById("library-input"),
   libraryAddBtn: () => document.getElementById("library-add-btn"),
   libraryList: () => document.getElementById("library-list"),
@@ -53,6 +54,21 @@ export function bindReadyButton(handler) {
 
 export function bindLeaveButton(handler) {
   el.leaveBtn().addEventListener("click", handler);
+}
+
+export function bindJoinButton(handler) {
+  el.joinBtn().addEventListener("click", handler);
+}
+
+/** Toggles just the Join button (used while a join attempt is in flight). */
+export function setJoinButtonEnabled(enabled) {
+  el.joinBtn().disabled = !enabled;
+}
+
+/** Reflects overall joined/not-joined state: Leave button + room controls. */
+export function setJoinedState(isJoined) {
+  el.leaveBtn().disabled = !isJoined;
+  setControlsEnabled(isJoined);
 }
 
 export function bindPlayerControls(handlers) {
