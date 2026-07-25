@@ -41,7 +41,12 @@ import {
 import { listen as listenToLibrary, add as addToLibrary, remove as removeFromLibrary } from "./library.js";
 
 import { initPlayer, loadVideoById, play as playVideo, pause as pauseVideo } from "./youtube.js";
-import { add as queueAdd, clear as queueClear, current as queueCurrent } from "./queue.js";
+import {
+  syncWith as queueSyncWith,
+  current as queueCurrent,
+  next as queueNext,
+  previous as queuePrevious
+} from "./queue.js";
 
 let mySlot = null;
 let myUserId = null;
@@ -151,8 +156,14 @@ async function init() {
   bindPlayerControls({
     play: () => setPlayerAction("play", mySlot, queueCurrent()),
     pause: () => setPlayerAction("pause", mySlot),
-    previous: () => setPlayerAction("previous", mySlot),
-    next: () => setPlayerAction("next", mySlot)
+    previous: () => {
+      const videoId = queuePrevious();
+      if (videoId) setPlayerAction("previous", mySlot, videoId);
+    },
+    next: () => {
+      const videoId = queueNext();
+      if (videoId) setPlayerAction("next", mySlot, videoId);
+    }
   });
 
   bindLeaveButton(handleLeaveRoom);
@@ -171,8 +182,7 @@ function initLibrary() {
     renderLibrary(songs, async (videoId) => {
       await removeFromLibrary(videoId);
     });
-    queueClear();
-    songs.forEach((song) => queueAdd(song.videoId));
+    queueSyncWith(songs.map((song) => song.videoId));
   });
 
   bindLibraryAdd(async (rawInput) => {
@@ -262,6 +272,7 @@ async function handlePlayerAction(playerData) {
     }
     if (playerData.lastAction === "play") playVideo();
     else if (playerData.lastAction === "pause") pauseVideo();
+    else if (playerData.lastAction === "previous" || playerData.lastAction === "next") playVideo();
   } catch (error) {
     console.error("Playback side effect failed:", error);
   }
