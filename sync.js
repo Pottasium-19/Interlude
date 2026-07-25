@@ -81,20 +81,18 @@ export async function resetReadyAndCountdown() {
 
 const ACTION_TO_STATE = { play: "playing", pause: "paused" };
 
-export async function setPlayerAction(action, slot) {
+export async function setPlayerAction(action, slot, videoId) {
   const update = {
     lastAction: action,
     actionBy: slot,
     actionAt: getCorrectedNow(),
-    // Unique per press. Lets a consumer that's about to trigger a real
-    // side effect (e.g. Phase 2's YouTube seek/play call) recognize
-    // "I've already handled this exact action" and skip duplicates
-    // caused by a reconnect replaying the latest doc state, or by a
-    // listener re-attaching.
     actionId: crypto.randomUUID()
   };
   if (ACTION_TO_STATE[action]) {
     update.playbackState = ACTION_TO_STATE[action];
+  }
+  if (videoId) {
+    update.videoId = videoId;
   }
   await setDoc(playerDocRef, update, { merge: true });
 }
