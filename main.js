@@ -166,7 +166,7 @@ async function handleLeaveRoom() {
   clearStoredSlot();
   location.reload();
 }
-}
+
 
 /**
  * When both users are ready, exactly the current host writes the shared
