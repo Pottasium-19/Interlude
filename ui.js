@@ -13,7 +13,8 @@ const el = {
   playBtn: () => document.getElementById("play-btn"),
   pauseBtn: () => document.getElementById("pause-btn"),
   prevBtn: () => document.getElementById("prev-btn"),
-  nextBtn: () => document.getElementById("next-btn")
+  nextBtn: () => document.getElementById("next-btn"),
+  leaveBtn: () => document.getElementById("leave-btn")
 };
 
 export function renderConnectionStatus(text) {
@@ -44,6 +45,10 @@ export function renderLastAction(action, by) {
 
 export function bindReadyButton(handler) {
   el.readyBtn().addEventListener("click", handler);
+}
+
+export function bindLeaveButton(handler) {
+  el.leaveBtn().addEventListener("click", handler);
 }
 
 export function bindPlayerControls(handlers) {
