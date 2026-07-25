@@ -10,7 +10,10 @@ import {
   listenToPresence,
   startHeartbeat,
   isPresenceStale,
-  claimHostIfVacant
+  claimHostIfVacant,
+  releaseSlot,
+  releaseStaleSlot,
+  clearStoredSlot
 } from "./room.js";
 import {
   setReady,
@@ -29,6 +32,7 @@ import {
   renderLastAction,
   bindReadyButton,
   bindPlayerControls,
+  bindLeaveButton,
   setControlsEnabled
 } from "./ui.js";
 
@@ -42,6 +46,7 @@ let lastHandledActionId = null;
 let countdownIntervalId = null;
 let currentHostId = null;
 let otherUserId = null;
+let stopHeartbeat = null;
 
 // Fresh per page load — never persisted — so a stale tab (bfcache,
 // suspended background tab) can be told apart from the current one.
@@ -72,7 +77,7 @@ async function init() {
   const otherSlot = mySlot === "user1" ? "user2" : "user1";
 
   // Presence: heartbeat for this user, listener for the other user.
-  startHeartbeat(myUserId, mySlot, mySessionId);
+  stopHeartbeat = startHeartbeat(myUserId, mySlot, mySessionId);
   listenToPresence(otherSlot, (presence) => {
     otherUserId = presence ? presence.userId : null;
     otherConnected = !!presence && presence.connected && !isPresenceStale(presence.lastSeen);
@@ -85,6 +90,11 @@ async function init() {
   setInterval(() => {
     refreshConnectionLabel();
     maybeTakeOverHost();
+    if (!otherConnected) {
+      releaseStaleSlot(otherSlot).catch((error) =>
+        console.error("Stale slot release failed:", error)
+      );
+    }
   }, 5000);
 
   listenToRoom((roomData) => {
@@ -128,11 +138,34 @@ async function init() {
     next: () => setPlayerAction("next", mySlot)
   });
 
+  bindLeaveButton(handleLeaveRoom);
+
   setControlsEnabled(true);
 }
 
 function refreshConnectionLabel() {
   renderConnectionStatus(otherConnected ? "Both connected" : "Waiting for second user...");
+}
+
+async function handleLeaveRoom() {
+  if (stopHeartbeat) {
+    stopHeartbeat();
+    stopHeartbeat = null;
+  }
+  if (countdownIntervalId) {
+    clearInterval(countdownIntervalId);
+    countdownIntervalId = null;
+  }
+  try {
+    if (mySlot && myUserId) {
+      await releaseSlot(mySlot, myUserId);
+    }
+  } catch (error) {
+    console.error("Leave room failed:", error);
+  }
+  clearStoredSlot();
+  location.reload();
+}
 }
 
 /**
