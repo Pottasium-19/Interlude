@@ -40,6 +40,9 @@ import {
 } from "./ui.js";
 import { listen as listenToLibrary, add as addToLibrary, remove as removeFromLibrary } from "./library.js";
 
+import { initPlayer, loadVideoById, play as playVideo, pause as pauseVideo } from "./youtube.js";
+import { add as queueAdd, clear as queueClear, current as queueCurrent } from "./queue.js";
+
 let mySlot = null;
 let myUserId = null;
 let myCurrentlyReady = false;
@@ -51,6 +54,8 @@ let countdownIntervalId = null;
 let currentHostId = null;
 let otherUserId = null;
 let stopHeartbeat = null;
+let playerReadyPromise = null;
+let lastLoadedVideoId = null;
 
 // Fresh per page load — never persisted — so a stale tab (bfcache,
 // suspended background tab) can be told apart from the current one.
@@ -58,6 +63,9 @@ const mySessionId = crypto.randomUUID();
 
 async function init() {
   setControlsEnabled(false);
+  playerReadyPromise = initPlayer("youtube-player").catch((error) => {
+  console.error("YouTube player init failed:", error);
+});
   renderConnectionStatus("Connecting...");
 
   // The personal library only needs this browser's stable anonymous
@@ -132,7 +140,7 @@ async function init() {
     // fire exactly once per actionId, not once per snapshot delivery.
     if (playerData.actionId && playerData.actionId !== lastHandledActionId) {
       lastHandledActionId = playerData.actionId;
-      // Future: trigger the real playback side effect here.
+      handlePlayerAction(playerData);
     }
   });
 
@@ -141,7 +149,7 @@ async function init() {
   });
 
   bindPlayerControls({
-    play: () => setPlayerAction("play", mySlot),
+    play: () => setPlayerAction("play", mySlot, queueCurrent()),
     pause: () => setPlayerAction("pause", mySlot),
     previous: () => setPlayerAction("previous", mySlot),
     next: () => setPlayerAction("next", mySlot)
@@ -163,6 +171,8 @@ function initLibrary() {
     renderLibrary(songs, async (videoId) => {
       await removeFromLibrary(videoId);
     });
+    queueClear();
+    songs.forEach((song) => queueAdd(song.videoId));
   });
 
   bindLibraryAdd(async (rawInput) => {
@@ -243,6 +253,20 @@ function handleSyncUpdate(syncData) {
   runCountdown(syncData.countdownStartAt);
 }
 
+async function handlePlayerAction(playerData) {
+  try {
+    await playerReadyPromise;
+    if (playerData.videoId && playerData.videoId !== lastLoadedVideoId) {
+      lastLoadedVideoId = playerData.videoId;
+      loadVideoById(playerData.videoId);
+    }
+    if (playerData.lastAction === "play") playVideo();
+    else if (playerData.lastAction === "pause") pauseVideo();
+  } catch (error) {
+    console.error("Playback side effect failed:", error);
+  }
+}
+
 function runCountdown(startAtMillis) {
   if (countdownIntervalId) clearInterval(countdownIntervalId);
 
@@ -254,6 +278,12 @@ function runCountdown(startAtMillis) {
       renderCountdown("GO");
       clearInterval(countdownIntervalId);
       countdownIntervalId = null;
+      const currentVideoId = queueCurrent();
+      if (currentVideoId) {
+        setPlayerAction("play", mySlot, currentVideoId).catch((error) =>
+          console.error("Failed to start playback:", error)
+        );
+      }
       setTimeout(async () => {
         renderCountdown("");
         await resetReadyAndCountdown();
