@@ -13,6 +13,8 @@ import {
   deleteField
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+import { db } from "./firebase.js";
+
 const ROOM_ID = "main-room";
 const HEARTBEAT_INTERVAL_MS = 5000;
 const STALE_THRESHOLD_MS = 15000; // no heartbeat for this long = treat as disconnected
