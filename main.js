@@ -33,7 +33,9 @@ import {
   bindReadyButton,
   bindPlayerControls,
   bindLeaveButton,
+  bindJoinButton,
   setControlsEnabled,
+  setJoinedState,
   renderLibrary,
   renderLibraryMessage,
   bindLibraryAdd
@@ -59,6 +61,13 @@ let countdownIntervalId = null;
 let currentHostId = null;
 let otherUserId = null;
 let stopHeartbeat = null;
+let stopPresenceListener = null;
+let stopRoomListener = null;
+let stopReadyListener = null;
+let stopSyncListener = null;
+let stopPlayerListener = null;
+let staleCheckIntervalId = null;
+let joining = false;
 let playerReadyPromise = null;
 let lastLoadedVideoId = null;
 
@@ -66,17 +75,42 @@ let lastLoadedVideoId = null;
 // suspended background tab) can be told apart from the current one.
 const mySessionId = crypto.randomUUID();
 
-async function init() {
-  setControlsEnabled(false);
-  playerReadyPromise = initPlayer("youtube-player").catch((error) => {
-  console.error("YouTube player init failed:", error);
-});
-  renderConnectionStatus("Connecting...");
+function init() {
+  renderConnectionStatus("Not connected");
 
   // The personal library only needs this browser's stable anonymous
   // user id (see room.js:getUserId) — not a claimed room slot — so it
-  // loads independently of, and even if, the room join below fails.
+  // loads independently of joining the room, right on page load.
   initLibrary();
+
+  // Static UI wiring — bound once here, not inside joinRoom(), since
+  // joinRoom() can run again after Leave Room without a page refresh
+  // and must not stack duplicate listeners on these buttons.
+  bindJoinButton(joinRoom);
+  bindLeaveButton(handleLeaveRoom);
+  bindReadyButton(async () => {
+    await setReady(mySlot, !myCurrentlyReady);
+  });
+  bindPlayerControls({
+    play: () => setPlayerAction("play", mySlot),
+    pause: () => setPlayerAction("pause", mySlot),
+    previous: () => setPlayerAction("previous", mySlot),
+    next: () => setPlayerAction("next", mySlot)
+  });
+}
+
+/**
+ * Connects this browser to the shared room: claims a slot, starts
+ * presence/heartbeat, and attaches every Firestore listener that
+ * drives sync. Runs only on Join Room click — never automatically on
+ * page load. handleLeaveRoom() tears down everything started here, so
+ * this can safely run again afterward without a refresh.
+ */
+async function joinRoom() {
+  if (joining || mySlot) return;
+  joining = true;
+  setJoinButtonEnabled(false);
+  renderConnectionStatus("Connecting...");
 
   // Align this device's clock with Firestore's before anything else,
   // since the countdown depends on it.
@@ -91,8 +125,10 @@ async function init() {
       renderConnectionStatus("Room is full — only two users are supported.");
     } else {
       console.error("Failed to join room:", error);
-      renderConnectionStatus("Connection error. Please refresh.");
+      renderConnectionStatus("Connection error. Please try again.");
     }
+    joining = false;
+    setJoinButtonEnabled(true);
     return;
   }
 
@@ -100,7 +136,7 @@ async function init() {
 
   // Presence: heartbeat for this user, listener for the other user.
   stopHeartbeat = startHeartbeat(myUserId, mySlot, mySessionId);
-  listenToPresence(otherSlot, (presence) => {
+  stopPresenceListener = listenToPresence(otherSlot, (presence) => {
     otherUserId = presence ? presence.userId : null;
     otherConnected = !!presence && presence.connected && !isPresenceStale(presence.lastSeen);
     refreshConnectionLabel();
@@ -109,7 +145,7 @@ async function init() {
   // Re-check staleness on a timer too, in case the other user's tab
   // died without ever writing a "disconnected" flag. This is also what
   // notices a stale host and triggers failover even with no new snapshot.
-  setInterval(() => {
+  staleCheckIntervalId = setInterval(() => {
     refreshConnectionLabel();
     maybeTakeOverHost();
     if (!otherConnected) {
@@ -119,7 +155,7 @@ async function init() {
     }
   }, 5000);
 
-  listenToRoom((roomData) => {
+  stopRoomListener = listenToRoom((roomData) => {
     currentHostId = roomData ? roomData.hostId : null;
     if (!roomData || !roomData.user1Id || !roomData.user2Id) {
       renderConnectionStatus("Waiting for second user...");
@@ -128,47 +164,25 @@ async function init() {
     }
   });
 
-  listenToReady((readyData) => {
+  stopReadyListener = listenToReady((readyData) => {
     myCurrentlyReady = renderReadyStatus(readyData, mySlot);
     maybeScheduleCountdown(readyData);
   });
 
-  listenToSync((syncData) => handleSyncUpdate(syncData));
+  stopSyncListener = listenToSync((syncData) => handleSyncUpdate(syncData));
 
-  listenToPlayer((playerData) => {
+  stopPlayerListener = listenToPlayer((playerData) => {
     renderPlayerState(playerData.playbackState || "waiting");
     renderLastAction(playerData.lastAction, playerData.actionBy);
 
-    // Rendering above is idempotent, so duplicates are harmless today.
-    // This guard is the seam Phase 2 will use once a player action
-    // triggers a real side effect (e.g. a YouTube API call) that must
-    // fire exactly once per actionId, not once per snapshot delivery.
     if (playerData.actionId && playerData.actionId !== lastHandledActionId) {
       lastHandledActionId = playerData.actionId;
-      handlePlayerAction(playerData);
+      // Future: trigger the real playback side effect here.
     }
   });
 
-  bindReadyButton(async () => {
-    await setReady(mySlot, !myCurrentlyReady);
-  });
-
-  bindPlayerControls({
-    play: () => setPlayerAction("play", mySlot, queueCurrent()),
-    pause: () => setPlayerAction("pause", mySlot),
-    previous: () => {
-      const videoId = queuePrevious();
-      if (videoId) setPlayerAction("previous", mySlot, videoId);
-    },
-    next: () => {
-      const videoId = queueNext();
-      if (videoId) setPlayerAction("next", mySlot, videoId);
-    }
-  });
-
-  bindLeaveButton(handleLeaveRoom);
-
-  setControlsEnabled(true);
+  joining = false;
+  setJoinedState(true);
 }
 
 const LIBRARY_MESSAGES = {
@@ -201,10 +215,23 @@ async function handleLeaveRoom() {
     stopHeartbeat();
     stopHeartbeat = null;
   }
+  if (staleCheckIntervalId) {
+    clearInterval(staleCheckIntervalId);
+    staleCheckIntervalId = null;
+  }
   if (countdownIntervalId) {
     clearInterval(countdownIntervalId);
     countdownIntervalId = null;
   }
+  [stopPresenceListener, stopRoomListener, stopReadyListener, stopSyncListener, stopPlayerListener].forEach(
+    (stop) => stop && stop()
+  );
+  stopPresenceListener = null;
+  stopRoomListener = null;
+  stopReadyListener = null;
+  stopSyncListener = null;
+  stopPlayerListener = null;
+
   try {
     if (mySlot && myUserId) {
       await releaseSlot(mySlot, myUserId);
@@ -213,7 +240,24 @@ async function handleLeaveRoom() {
     console.error("Leave room failed:", error);
   }
   clearStoredSlot();
-  location.reload();
+
+  // Reset room-scoped state so joinRoom() can run again without a
+  // page refresh.
+  mySlot = null;
+  myUserId = null;
+  myCurrentlyReady = false;
+  otherConnected = false;
+  bothReadyHandled = false;
+  lastHandledCountdownId = null;
+  lastHandledActionId = null;
+  currentHostId = null;
+  otherUserId = null;
+
+  renderConnectionStatus("Not connected");
+  renderReadyStatus({ user1Ready: false, user2Ready: false }, "user1");
+  renderCountdown("");
+  setJoinedState(false);
+  setJoinButtonEnabled(true);
 }
 
 
