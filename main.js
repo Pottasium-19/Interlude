@@ -93,10 +93,10 @@ function init() {
     await setReady(mySlot, !myCurrentlyReady);
   });
   bindPlayerControls({
-    play: () => setPlayerAction("play", mySlot),
+    play: () => setPlayerAction("play", mySlot, queueCurrent()),
     pause: () => setPlayerAction("pause", mySlot),
-    previous: () => setPlayerAction("previous", mySlot),
-    next: () => setPlayerAction("next", mySlot)
+    previous: () => setPlayerAction("previous", mySlot, queuePrevious()),
+    next: () => setPlayerAction("next", mySlot, queueNext())
   });
 }
 
@@ -115,9 +115,8 @@ async function joinRoom() {
 
   // Align this device's clock with Firestore's before anything else,
   // since the countdown depends on it.
-  await syncServerTimeOffset();
-
   try {
+    await syncServerTimeOffset();
     const claimed = await claimSlot();
     myUserId = claimed.userId;
     mySlot = claimed.slot;
@@ -339,6 +338,8 @@ function runCountdown(startAtMillis) {
         setPlayerAction("play", mySlot, currentVideoId).catch((error) =>
           console.error("Failed to start playback:", error)
         );
+      } else {
+        console.warn("Countdown finished but queue has no current song — nothing will play.");
       }
       setTimeout(async () => {
         renderCountdown("");
