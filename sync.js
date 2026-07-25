@@ -79,7 +79,7 @@ export async function resetReadyAndCountdown() {
 // Shared player state (no media playback yet — state only)
 // ---------------------------------------------------------------------
 
-const ACTION_TO_STATE = { play: "playing", pause: "paused" };
+const ACTION_TO_STATE = { play: "playing", pause: "paused", previous: "playing", next: "playing" };
 
 export async function setPlayerAction(action, slot, videoId) {
   const update = {
