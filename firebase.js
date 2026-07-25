@@ -7,12 +7,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCaKh9hAdVy243Fb7dwIcfi5Xey2SObv8s",
+  authDomain: "interlude-d276d.firebaseapp.com",
+  projectId: "interlude-d276d",
+  storageBucket: "interlude-d276d.firebasestorage.app",
+  messagingSenderId: "593151886590",
+  appId: "1:593151886590:web:5ed8d602cf7cd8679411af",
+  measurementId: "G-NDZJSQD3X9"
 };
 
 const app = initializeApp(firebaseConfig);
