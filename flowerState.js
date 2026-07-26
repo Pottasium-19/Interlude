@@ -1,6 +1,7 @@
 // flowerState.js
-// Single responsibility: track the petals (video IDs) on one shared
-// flower, organized into three layers — outer (30), middle (20),
+// Single responsibility: track the petals (video IDs) on the current
+// user's own private flower, organized into three layers — outer (30),
+// middle (20),
 // inner (10) — each with its own capacity. A song can be on at most
 // one layer at a time.
 //
@@ -8,7 +9,7 @@
 // synchronous and Firestore-free, exactly as before, for simple local
 // use and testing. The *Remote functions below them are the
 // Firestore-backed versions the app actually calls: they validate and
-// write against the live "petals" document — rooms/main-room/state/petals
+// write against that user's own document at flowers/{userId} —
 // — inside a transaction (so two simultaneous edits from both users
 // can't both slip past a capacity/duplicate check), then rely on the
 // live listenToFlower() subscription to reflect the confirmed result
@@ -28,6 +29,8 @@ import {
   runTransaction
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+import { getUserId } from "./room.js";
+
 export const LAYERS = ["outer", "middle", "inner"];
 
 export const LAYER_CAPACITY = {
@@ -42,7 +45,9 @@ export const MAX_PETALS = LAYER_CAPACITY.outer + LAYER_CAPACITY.middle + LAYER_C
 
 let layers = { outer: [], middle: [], inner: [] };
 
-const petalsDocRef = doc(db, "rooms", "main-room", "state", "petals");
+function petalsDocRef() {
+  return doc(db, "flowers", getUserId());
+}
 let unsubscribe = null;
 
 function isValidLayer(layer) {
@@ -157,12 +162,30 @@ function applySnapshot(data) {
  */
 export async function restoreFlower() {
   try {
-    const snap = await getDoc(petalsDocRef);
+    const snap = await getDoc(petalsDocRef());
     applySnapshot(snap.exists() ? snap.data() : null);
   } catch (error) {
     console.error("flowerState.js: failed to restore flower:", error);
   }
   return getAllLayers();
+}
+
+/**
+ * One-off read of any user's flower by userId — including someone
+ * else's. Used only for the temporary playback merge; never
+ * subscribed to live, never written through, and never touches this
+ * module's own in-memory `layers` (which always reflects the caller's
+ * own flower only).
+ */
+export async function getFlowerSnapshot(userId) {
+  if (typeof userId !== "string" || !userId) return { outer: [], middle: [], inner: [] };
+  try {
+    const snap = await getDoc(doc(db, "flowers", userId));
+    return normalizeLayers(snap.exists() ? snap.data() : null);
+  } catch (error) {
+    console.error("flowerState.js: failed to read flower for merge:", error);
+    return { outer: [], middle: [], inner: [] };
+  }
 }
 
 /**
@@ -178,7 +201,7 @@ export function listenToFlower(onChange) {
   if (unsubscribe) unsubscribe();
 
   unsubscribe = onSnapshot(
-    petalsDocRef,
+    petalsDocRef(),
     (snap) => {
       applySnapshot(snap.exists() ? snap.data() : null);
       onChange(getAllLayers());
@@ -199,10 +222,10 @@ export function stopFlowerListening() {
 
 async function transactionalMutate(mutateFn) {
   return runTransaction(db, async (transaction) => {
-    const snap = await transaction.get(petalsDocRef);
+    const snap = await transaction.get(petalsDocRef());
     const current = normalizeLayers(snap.exists() ? snap.data() : null);
     const applied = mutateFn(current);
-    if (applied) transaction.set(petalsDocRef, current, { merge: true });
+    if (applied) transaction.set(petalsDocRef(), current, { merge: true });
     return applied;
   });
 }
