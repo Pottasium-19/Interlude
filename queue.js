@@ -99,7 +99,13 @@ export function syncWith(videoIds) {
     return;
   }
 
-  /**
+  const preservedIndex = previousCurrent !== null ? items.indexOf(previousCurrent) : -1;
+  currentIndex = preservedIndex !== -1
+    ? preservedIndex
+    : Math.min(Math.max(currentIndex, 0), items.length - 1);
+}
+
+/**
  * Interleaves two ordered video-id lists round-robin (a[0], b[0], a[1], b[1], ...),
  * skipping a duplicate so it only appears once, at its earliest position.
  */
@@ -118,10 +124,4 @@ export function mergeRoundRobin(listA = [], listB = []) {
     }
   }
   return merged;
-}
-  
-  const preservedIndex = previousCurrent !== null ? items.indexOf(previousCurrent) : -1;
-  currentIndex = preservedIndex !== -1
-    ? preservedIndex
-    : Math.min(Math.max(currentIndex, 0), items.length - 1);
 }
