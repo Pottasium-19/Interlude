@@ -42,11 +42,23 @@ bindReadyButton,
   setJoinButtonEnabled,
   renderLibrary,
   renderLibraryMessage,
-  bindLibraryAdd
+  bindLibraryAdd,
+  renderFlower
 } from "./ui.js";
+
 import { listen as listenToLibrary, add as addToLibrary, remove as removeFromLibrary } from "./library.js";
 
+
+import {
+  listenToFlower,
+  addPetalRemote,
+  removePetalRemote,
+  movePetalRemote
+} from "./flowerState.js";
+
+
 import { initPlayer, loadVideoById, play as playVideo, pause as pauseVideo } from "./youtube.js";
+
 import {
   syncWith as queueSyncWith,
   current as queueCurrent,
@@ -85,6 +97,7 @@ const mySessionId = crypto.randomUUID();
 function init() {
   renderConnectionStatus("Not connected");
   initLibrary();
+  initFlower();
   playerReadyPromise = initPlayer("youtube-player");
   bindJoinButton(joinRoom);
   bindLeaveButton(handleLeaveRoom);
@@ -97,6 +110,30 @@ function init() {
     previous: () => setPlayerAction("previous", mySlot, queuePrevious()),
     next: () => setPlayerAction("next", mySlot, queueNext())
   });
+}
+
+function initFlower() {
+  listenToFlower((layers) => {
+    renderFlower(layers, handleFlowerRemove, handleFlowerMove);
+  });
+}
+
+async function handleFlowerAdd(videoId, layer) {
+  const applied = await addPetalRemote(videoId, layer);
+  if (!applied) {
+    renderLibraryMessage(`Couldn't add to ${layer} — it may be full or already on the flower.`);
+  }
+}
+
+async function handleFlowerRemove(videoId) {
+  await removePetalRemote(videoId);
+}
+
+async function handleFlowerMove(videoId, toLayer) {
+  const applied = await movePetalRemote(videoId, toLayer);
+  if (!applied) {
+    renderLibraryMessage(`Couldn't move to ${toLayer} — it's probably full.`);
+  }
 }
 
 /**
@@ -200,12 +237,17 @@ const LIBRARY_MESSAGES = {
 
 function initLibrary() {
   listenToLibrary((songs) => {
-    renderLibrary(songs, async (videoId) => {
-      const result = await removeFromLibrary(videoId);
-      if (!result.ok) {
-        renderLibraryMessage(LIBRARY_MESSAGES[result.reason] || "Couldn't remove that song — please try again.");
-      }
-    });
+    renderLibrary(
+      songs,
+      async (videoId) => {
+        const result = await removeFromLibrary(videoId);
+        if (!result.ok) {
+          renderLibraryMessage(LIBRARY_MESSAGES[result.reason] || "Couldn't remove that song — please try again.");
+        }
+        await removePetalRemote(videoId);
+      },
+      handleFlowerAdd
+    );
     myLibraryVideoIds = songs.map((song) => song.videoId);
     if (mySlot) {
       setMyQueueSongs(mySlot, myLibraryVideoIds).catch((error) =>
@@ -213,6 +255,13 @@ function initLibrary() {
       );
     }
   });
+
+  bindLibraryAdd(async (rawInput) => {
+    if (!rawInput || !rawInput.trim()) return;
+    const result = await addToLibrary(rawInput);
+    renderLibraryMessage(result.ok ? "" : LIBRARY_MESSAGES[result.reason] || "");
+  });
+}
 
   bindLibraryAdd(async (rawInput) => {
     if (!rawInput || !rawInput.trim()) return;
