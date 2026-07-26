@@ -48,12 +48,12 @@ bindReadyButton,
 
 import { listen as listenToLibrary, add as addToLibrary, remove as removeFromLibrary } from "./library.js";
 
-
 import {
   listenToFlower,
   addPetalRemote,
   removePetalRemote,
-  movePetalRemote
+  movePetalRemote,
+  getFlowerSnapshot
 } from "./flowerState.js";
 
 
@@ -170,14 +170,6 @@ async function joinRoom() {
 
   const otherSlot = mySlot === "user1" ? "user2" : "user1";
 
-  setMyQueueSongs(mySlot, myLibraryVideoIds).catch((error) =>
-    console.error("Failed to publish library to shared queue:", error)
-  );
-  stopQueueListener = listenToQueue((queueData) => {
-    const merged = mergeRoundRobin(queueData.user1Songs || [], queueData.user2Songs || []);
-    queueSyncWith(merged);
-  });
-
   // Presence: heartbeat for this user, listener for the other user.
   stopHeartbeat = startHeartbeat(myUserId, mySlot, mySessionId);
   stopPresenceListener = listenToPresence(otherSlot, (presence) => {
@@ -249,11 +241,7 @@ function initLibrary() {
       handleFlowerAdd
     );
     myLibraryVideoIds = songs.map((song) => song.videoId);
-    if (mySlot) {
-      setMyQueueSongs(mySlot, myLibraryVideoIds).catch((error) =>
-        console.error("Failed to publish library to shared queue:", error)
-      );
-    }
+    
   });
 
   bindLibraryAdd(async (rawInput) => {
@@ -380,6 +368,39 @@ async function handlePlayerAction(playerData) {
   }
 }
 
+/**
+ * Builds the shared playback queue the moment playback starts: reads
+ * both users' private flowers, merges them round-robin into a
+ * temporary in-memory playlist (duplicates collapsed to one entry),
+ * feeds that into the existing queue engine, and plays whatever ends
+ * up current. The merge itself is never persisted — both devices
+ * independently recompute it from the same two flower documents, so
+ * the resulting queue matches on both sides without ever writing a
+ * shared flower to Firestore.
+ */
+async function startFlowerBackedPlayback() {
+  try {
+    const [myFlower, otherFlower] = await Promise.all([
+      getFlowerSnapshot(myUserId),
+      getFlowerSnapshot(otherUserId)
+    ]);
+    const myPetals = [...myFlower.outer, ...myFlower.middle, ...myFlower.inner];
+    const otherPetals = [...otherFlower.outer, ...otherFlower.middle, ...otherFlower.inner];
+    const merged = mergeRoundRobin(myPetals, otherPetals);
+
+    queueSyncWith(merged);
+    const currentVideoId = queueCurrent();
+
+    if (currentVideoId) {
+      await setPlayerAction("play", mySlot, currentVideoId);
+    } else {
+      console.warn("Countdown finished but both flowers are empty — nothing will play.");
+    }
+  } catch (error) {
+    console.error("Failed to build merged flower queue:", error);
+  }
+}
+
 function runCountdown(startAtMillis) {
   if (countdownIntervalId) clearInterval(countdownIntervalId);
 
@@ -391,14 +412,7 @@ function runCountdown(startAtMillis) {
       renderCountdown("GO");
       clearInterval(countdownIntervalId);
       countdownIntervalId = null;
-      const currentVideoId = queueCurrent();
-      if (currentVideoId) {
-        setPlayerAction("play", mySlot, currentVideoId).catch((error) =>
-          console.error("Failed to start playback:", error)
-        );
-      } else {
-        console.warn("Countdown finished but queue has no current song — nothing will play.");
-      }
+      startFlowerBackedPlayback();
       setTimeout(async () => {
         renderCountdown("");
         await resetReadyAndCountdown();
