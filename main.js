@@ -84,15 +84,8 @@ const mySessionId = crypto.randomUUID();
 
 function init() {
   renderConnectionStatus("Not connected");
-
-  // The personal library only needs this browser's stable anonymous
-  // user id (see room.js:getUserId) — not a claimed room slot — so it
-  // loads independently of joining the room, right on page load.
   initLibrary();
-
-  // Static UI wiring — bound once here, not inside joinRoom(), since
-  // joinRoom() can run again after Leave Room without a page refresh
-  // and must not stack duplicate listeners on these buttons.
+  playerReadyPromise = initPlayer("youtube-player");
   bindJoinButton(joinRoom);
   bindLeaveButton(handleLeaveRoom);
   bindReadyButton(async () => {
@@ -191,7 +184,7 @@ async function joinRoom() {
 
     if (playerData.actionId && playerData.actionId !== lastHandledActionId) {
       lastHandledActionId = playerData.actionId;
-      // Future: trigger the real playback side effect here.
+      handlePlayerAction(playerData);
     }
   });
 
