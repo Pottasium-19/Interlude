@@ -263,13 +263,6 @@ function initLibrary() {
   });
 }
 
-  bindLibraryAdd(async (rawInput) => {
-    if (!rawInput || !rawInput.trim()) return;
-    const result = await addToLibrary(rawInput);
-    renderLibraryMessage(result.ok ? "" : LIBRARY_MESSAGES[result.reason] || "");
-  });
-}
-
 function refreshConnectionLabel() {
   renderConnectionStatus(otherConnected ? "Both connected" : "Waiting for second user...");
 }
