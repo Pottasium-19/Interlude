@@ -27,7 +27,8 @@ import {
   advanceQueueIfAtEnd,
   reportPlaybackPosition,
   setPlayingState,
-  clearPlayerState
+  clearPlayerState,
+  setManualPlayVideoId
   
 } from "./sync.js";
 
@@ -111,6 +112,7 @@ let playerReadyPromise = null;
 let lastLoadedVideoId = null;
 let currentQueueSeed = null;
 let currentQueueIndex = null;
+let pendingManualPlayVideoId = null;
 let myFlowerVideoIds = [];
 let otherFlowerVideoIds = [];
 let stopOtherFlowerListener = null;
@@ -149,7 +151,7 @@ function init() {
 function initFlower() {
   listenToFlower((layers) => {
     currentFlowerLayers = layers;
-    renderFlower(layers, handleFlowerRemove, handleFlowerMove, (videoId) => myLibraryTitles[videoId]);
+    renderFlower(layers, handleFlowerRemove, handleFlowerMove, handleFlowerPlay, (videoId) => myLibraryTitles[videoId]);
     myFlowerVideoIds = [...layers.outer, ...layers.middle, ...layers.inner];
     updateQueueCount();
   });
@@ -175,6 +177,26 @@ async function handleFlowerMove(videoId, toLayer) {
   const applied = await movePetalRemote(videoId, toLayer);
   if (!applied) {
     renderLibraryMessage(`Couldn't move to ${toLayer} — it's probably full.`);
+  }
+}
+
+/**
+ * "Play This Song" — a manual override triggered from the Flower.
+ * Reuses the existing countdown/sync flow exactly (setManualPlayVideoId
+ * + scheduleCountdown): every client's regular listenToSync →
+ * runCountdown → startFlowerBackedPlayback path picks it up the same
+ * way it already handles Ready-triggered and queue-regeneration
+ * countdowns — no second playback path. startFlowerBackedPlayback jumps
+ * the freshly-rebuilt queue to this song once, then clears the
+ * override, so Next/Previous continue normally from this song onward.
+ */
+async function handleFlowerPlay(videoId) {
+  if (!mySlot) return;
+  try {
+    await setManualPlayVideoId(videoId);
+    await scheduleCountdown();
+  } catch (error) {
+    console.error("Failed to start manual play:", error);
   }
 }
 
@@ -364,8 +386,8 @@ function initLibrary() {
     myLibraryTitles = Object.fromEntries(
       songs.filter((song) => !!song.title).map((song) => [song.videoId, song.title])
     );
-    if (currentFlowerLayers) {
-      renderFlower(currentFlowerLayers, handleFlowerRemove, handleFlowerMove, (videoId) => myLibraryTitles[videoId]);
+        if (currentFlowerLayers) {
+      renderFlower(currentFlowerLayers, handleFlowerRemove, handleFlowerMove, handleFlowerPlay, (videoId) => myLibraryTitles[videoId]);
     }
   });
 
@@ -502,6 +524,7 @@ function handleSyncUpdate(syncData) {
   if (!syncData) return;
   if (syncData.queueSeed !== undefined) currentQueueSeed = syncData.queueSeed;
   if (syncData.queueIndex !== undefined) currentQueueIndex = syncData.queueIndex;
+  if (syncData.manualPlayVideoId !== undefined) pendingManualPlayVideoId = syncData.manualPlayVideoId;
   if (!syncData.active || !syncData.countdownStartAt) return;
   if (syncData.countdownId === lastHandledCountdownId) return; // already running this one
   lastHandledCountdownId = syncData.countdownId;
@@ -604,6 +627,15 @@ async function startFlowerBackedPlayback() {
 
     queueClear();
     queueSyncWith(seededQueue);
+
+    if (pendingManualPlayVideoId && seededQueue.includes(pendingManualPlayVideoId)) {
+      queueJumpTo(pendingManualPlayVideoId);
+    }
+    pendingManualPlayVideoId = null;
+    setManualPlayVideoId(null).catch((error) =>
+      console.error("Failed to clear manual play override:", error)
+    );
+
     const currentVideoId = queueCurrent();
 
     if (currentVideoId) {
