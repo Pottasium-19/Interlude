@@ -25,7 +25,8 @@ const el = {
   innerList: () => document.getElementById("inner-list"),
   outerCount: () => document.getElementById("outer-count"),
   middleCount: () => document.getElementById("middle-count"),
-  innerCount: () => document.getElementById("inner-count")
+  innerCount: () => document.getElementById("inner-count"),
+  queueCount: () => document.getElementById("queue-count"),
 };
 
 const LAYER_LIST_EL = { outer: el.outerList, middle: el.middleList, inner: el.innerList };
@@ -192,4 +193,8 @@ export function renderFlower(layers, onRemove, onMove) {
       list.appendChild(item);
     });
   });
+}
+
+export function renderQueueCount(count) {
+  el.queueCount().textContent = count;
 }
