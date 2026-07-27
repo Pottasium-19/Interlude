@@ -86,6 +86,8 @@ import {
 } from "./queue.js";
 
 let myLibraryVideoIds = [];
+let myLibraryTitles = {};
+let currentFlowerLayers = null;
 let stopQueueListener = null;
 let mySlot = null;
 let myUserId = null;
@@ -146,7 +148,8 @@ function init() {
 
 function initFlower() {
   listenToFlower((layers) => {
-    renderFlower(layers, handleFlowerRemove, handleFlowerMove);
+    currentFlowerLayers = layers;
+    renderFlower(layers, handleFlowerRemove, handleFlowerMove, (videoId) => myLibraryTitles[videoId]);
     myFlowerVideoIds = [...layers.outer, ...layers.middle, ...layers.inner];
     updateQueueCount();
   });
@@ -358,7 +361,12 @@ function initLibrary() {
       handleFlowerAdd
     );
     myLibraryVideoIds = songs.map((song) => song.videoId);
-    
+    myLibraryTitles = Object.fromEntries(
+      songs.filter((song) => !!song.title).map((song) => [song.videoId, song.title])
+    );
+    if (currentFlowerLayers) {
+      renderFlower(currentFlowerLayers, handleFlowerRemove, handleFlowerMove, (videoId) => myLibraryTitles[videoId]);
+    }
   });
 
   bindLibraryAdd(async (rawInput) => {
