@@ -25,7 +25,9 @@ import {
   listenToPlayer,
   advanceQueueIfAtEnd,
   reportPlaybackPosition,
-  setPlayingState
+  setPlayingState,
+  clearPlayerState
+  
 } from "./sync.js";
 
 import {
@@ -45,7 +47,8 @@ import {
   renderLibraryMessage,
   bindLibraryAdd,
   renderFlower,
-  renderQueueCount
+  renderQueueCount,
+  setPlaybackControlsEnabled
 } from "./ui.js";
 
 import { listen as listenToLibrary, add as addToLibrary, remove as removeFromLibrary } from "./library.js";
@@ -110,7 +113,7 @@ let otherFlowerVideoIds = [];
 let stopOtherFlowerListener = null;
 let lastOtherUserIdForFlowerListener = null;
 let lastLoadedAt = 0;
-
+let sessionActive = false;
 
 // Fresh per page load — never persisted — so a stale tab (bfcache,
 // suspended background tab) can be told apart from the current one.
@@ -196,10 +199,8 @@ function handleNext() {
 const MIN_PLAYBACK_BEFORE_AUTO_NEXT_MS = 3000;
 
 function handleAutoNext() {
-  if (getCorrectedNow() - lastLoadedAt < MIN_PLAYBACK_BEFORE_AUTO_NEXT_MS) {
-    console.warn("Ignoring stale end-of-video event.");
-    return;
-  }
+  if (myUserId !== currentHostId) return; // only host drives auto-advance
+  if (getCorrectedNow() - lastLoadedAt < MIN_PLAYBACK_BEFORE_AUTO_NEXT_MS) return;
   handleNext();
 }
 
@@ -320,12 +321,14 @@ async function joinRoom() {
     
     if (playerData.actionId && playerData.actionId !== lastHandledActionId) {
       lastHandledActionId = playerData.actionId;
-      handlePlayerAction(playerData);
+      if (sessionActive) handlePlayerAction(playerData);
     }
   });
 
   joining = false;
   setJoinedState(true);
+  setPlaybackControlsEnabled(false);
+  sessionActive = false;
 }
 
 const LIBRARY_MESSAGES = {
@@ -401,6 +404,15 @@ async function handleLeaveRoom() {
   } catch (error) {
     console.error("Leave room failed:", error);
   }
+
+  try {
+    if (mySlot) await setReady(mySlot, false);
+    await clearPlayerState();
+    await resetReadyAndCountdown();
+  } catch (error) {
+    console.error("Failed to clear session state on leave:", error);
+  }
+
   clearStoredSlot();
 
   // Reset room-scoped state so joinRoom() can run again without a
@@ -415,6 +427,8 @@ async function handleLeaveRoom() {
   currentHostId = null;
   otherUserId = null;
   currentQueueSeed = null;
+  sessionActive = false;
+  setPlaybackControlsEnabled(false);
   currentQueueIndex = null;
 
   renderConnectionStatus("Not connected");
@@ -531,6 +545,8 @@ async function startFlowerBackedPlayback() {
     const currentVideoId = queueCurrent();
 
     if (currentVideoId) {
+      sessionActive = true;
+    setPlaybackControlsEnabled(true);
       await setPlayerAction("play", mySlot, currentVideoId);
     } else {
       console.warn("Countdown finished but both flowers are empty — nothing will play.");
