@@ -14,7 +14,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./firebase.js";
-import { extractVideoId } from "./youtubeUtils.js";
+import { extractVideoId, fetchVideoTitle } from "./youtubeUtils.js"; 
 import { getUserId } from "./room.js";
 
 // Local cache of the last snapshot, kept in sync via onSnapshot. Lets
@@ -47,7 +47,8 @@ export function listen(onChange) {
       cachedSongs = snapshot.docs
         .map((docSnap) => ({
           videoId: docSnap.id,
-          addedAt: docSnap.data().addedAt || null
+          addedAt: docSnap.data().addedAt || null,
+          title: docSnap.data().title || null
         }))
         .sort((a, b) => toMillis(a.addedAt) - toMillis(b.addedAt));
       onChange(getAll());
@@ -83,15 +84,18 @@ export async function add(rawInput) {
   if (!videoId) return { ok: false, reason: "invalid" };
   if (has(videoId)) return { ok: false, reason: "duplicate" };
 
+  // Best-effort title fetch — never blocks the add on failure; the song
+  // is still fully usable by ID alone if this comes back null.
+  const title = await fetchVideoTitle(videoId);
+
   try {
     // Deterministic doc ID (the video ID itself) means a duplicate add
     // — even one that slips past the cache check above, e.g. a race
     // with another tab — safely overwrites the same document rather
     // than creating a second entry.
-    await setDoc(doc(songsCollectionRef(), videoId), {
-      videoId,
-      addedAt: serverTimestamp()
-    });
+    const payload = { videoId, addedAt: serverTimestamp() };
+    if (title) payload.title = title;
+    await setDoc(doc(songsCollectionRef(), videoId), payload);
     return { ok: true, videoId };
   } catch (error) {
     console.error("library.js: failed to add song:", error);
