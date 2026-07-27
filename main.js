@@ -109,6 +109,7 @@ let myFlowerVideoIds = [];
 let otherFlowerVideoIds = [];
 let stopOtherFlowerListener = null;
 let lastOtherUserIdForFlowerListener = null;
+let lastLoadedAt = 0;
 
 
 // Fresh per page load — never persisted — so a stale tab (bfcache,
@@ -120,7 +121,7 @@ function init() {
   initLibrary();
   initFlower();
   playerReadyPromise = initPlayer("youtube-player");
-  setCallbacks({ onEnd: handleNext, onError: () => handleNext() });
+  setCallbacks({ onEnd: handleAutoNext, onError: handleAutoNext });
   bindJoinButton(joinRoom);
   bindLeaveButton(handleLeaveRoom);
   bindReadyButton(async () => {
@@ -190,6 +191,16 @@ function handleNext() {
   } else {
     regenerateQueueAndAdvance();
   }
+}
+
+const MIN_PLAYBACK_BEFORE_AUTO_NEXT_MS = 3000;
+
+function handleAutoNext() {
+  if (getCorrectedNow() - lastLoadedAt < MIN_PLAYBACK_BEFORE_AUTO_NEXT_MS) {
+    console.warn("Ignoring stale end-of-video event.");
+    return;
+  }
+  handleNext();
 }
 
 /**
@@ -472,9 +483,10 @@ async function handlePlayerAction(playerData) {
     if (playerData.videoId) {
       queueJumpTo(playerData.videoId); // idempotent — keeps this device's local pointer aligned with whatever's actually playing
       if (playerData.videoId !== lastLoadedVideoId) {
-        lastLoadedVideoId = playerData.videoId;
-        loadVideoById(playerData.videoId);
-      }
+  lastLoadedVideoId = playerData.videoId;
+  lastLoadedAt = getCorrectedNow();
+  loadVideoById(playerData.videoId);
+}
     }
     if (playerData.lastAction === "play") playVideo();
     else if (playerData.lastAction === "pause") pauseVideo();
