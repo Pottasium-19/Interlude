@@ -114,6 +114,7 @@ let stopOtherFlowerListener = null;
 let lastOtherUserIdForFlowerListener = null;
 let lastLoadedAt = 0;
 let sessionActive = false;
+let latestPlayerData = null;
 
 // Fresh per page load — never persisted — so a stale tab (bfcache,
 // suspended background tab) can be told apart from the current one.
@@ -237,6 +238,7 @@ async function regenerateQueueAndAdvance() {
 async function joinRoom() {
   if (joining || mySlot) return;
   joining = true;
+  stopAllRoomListeners(); // guarantees no leftover listeners survive an incomplete previous join
   setJoinButtonEnabled(false);
   renderConnectionStatus("Connecting...");
 
@@ -317,8 +319,8 @@ async function joinRoom() {
   stopPlayerListener = listenToPlayer((playerData) => {
     renderPlayerState(playerData.playbackState || "waiting");
     renderLastAction(playerData.lastAction, playerData.actionBy);
+    latestPlayerData = playerData;
 
-    
     if (playerData.actionId && playerData.actionId !== lastHandledActionId) {
       lastHandledActionId = playerData.actionId;
       if (sessionActive) handlePlayerAction(playerData);
@@ -365,7 +367,7 @@ function refreshConnectionLabel() {
   renderConnectionStatus(otherConnected ? "Both connected" : "Waiting for second user...");
 }
 
-async function handleLeaveRoom() {
+function stopAllRoomListeners() {
   if (stopHeartbeat) {
     stopHeartbeat();
     stopHeartbeat = null;
@@ -378,15 +380,12 @@ async function handleLeaveRoom() {
     clearInterval(countdownIntervalId);
     countdownIntervalId = null;
   }
-
   if (stopOtherFlowerListener) {
     stopOtherFlowerListener();
     stopOtherFlowerListener = null;
   }
   otherFlowerVideoIds = [];
   lastOtherUserIdForFlowerListener = null;
-  updateQueueCount();
-  
   [stopPresenceListener, stopRoomListener, stopReadyListener, stopSyncListener, stopPlayerListener, stopQueueListener].forEach(
     (stop) => stop && stop()
   );
@@ -396,6 +395,11 @@ async function handleLeaveRoom() {
   stopSyncListener = null;
   stopPlayerListener = null;
   stopQueueListener = null;
+}
+
+async function handleLeaveRoom() {
+  stopAllRoomListeners();
+  updateQueueCount();
 
   try {
     if (mySlot && myUserId) {
@@ -430,6 +434,7 @@ async function handleLeaveRoom() {
   sessionActive = false;
   setPlaybackControlsEnabled(false);
   currentQueueIndex = null;
+  latestPlayerData = null;
 
   renderConnectionStatus("Not connected");
   renderReadyStatus({ user1Ready: false, user2Ready: false }, "user1");
@@ -487,7 +492,51 @@ function handleSyncUpdate(syncData) {
   if (!syncData.active || !syncData.countdownStartAt) return;
   if (syncData.countdownId === lastHandledCountdownId) return; // already running this one
   lastHandledCountdownId = syncData.countdownId;
-  runCountdown(syncData.countdownStartAt);
+
+  const remainingMs = syncData.countdownStartAt - getCorrectedNow();
+  if (remainingMs <= 0) {
+    // The countdown already finished before we ever saw it — a
+    // refresh or rejoin landing mid-session, not a fresh countdown.
+    // Rebuild local state to match instead of restarting playback.
+    resumeActiveSession();
+  } else {
+    runCountdown(syncData.countdownStartAt);
+  }
+}
+
+/**
+ * Rebuilds this device's local queue to match an already-in-progress
+ * session (page refresh or rejoin landing after playback already
+ * started). Unlike startFlowerBackedPlayback(), this never writes a
+ * new "play" action — the existing listenToPlayer listener
+ * independently delivers whatever's actually currently playing, and
+ * handlePlayerAction() (replayed here from the latest snapshot) loads
+ * it. This just makes sure the local queue — needed for Next/Previous
+ * — reflects the right song order first, and jumpTo() (inside
+ * handlePlayerAction) lands the pointer on the actual current song.
+ */
+async function resumeActiveSession() {
+  try {
+    const [myFlower, otherFlower] = await Promise.all([
+      getFlowerSnapshot(myUserId),
+      getFlowerSnapshot(otherUserId)
+    ]);
+    const myPetals = [...myFlower.outer, ...myFlower.middle, ...myFlower.inner];
+    const otherPetals = [...otherFlower.outer, ...otherFlower.middle, ...otherFlower.inner];
+    const seededQueue = buildSeededQueue(myPetals, otherPetals, currentQueueSeed || "default-seed");
+
+    queueClear();
+    queueSyncWith(seededQueue);
+    sessionActive = true;
+    setPlaybackControlsEnabled(true);
+
+    if (latestPlayerData && latestPlayerData.actionId) {
+      lastHandledActionId = latestPlayerData.actionId;
+      handlePlayerAction(latestPlayerData);
+    }
+  } catch (error) {
+    console.error("Failed to resume active session:", error);
+  }
 }
 
 async function handlePlayerAction(playerData) {
