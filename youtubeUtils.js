@@ -50,5 +50,33 @@ export function extractVideoId(input) {
     }
   }
 
+  // OLD (end of file):
   return candidate && VIDEO_ID_PATTERN.test(candidate) ? candidate : null;
+}
+
+// NEW (append after it):
+  return candidate && VIDEO_ID_PATTERN.test(candidate) ? candidate : null;
+}
+
+/**
+ * Fetches a video's display title via YouTube's public oEmbed endpoint —
+ * no API key required. Returns the title string on success, or null on
+ * any failure (network error, non-200 response, private/unembeddable
+ * video, malformed response). Never throws — callers treat null as
+ * "fall back to showing the video ID."
+ */
+export async function fetchVideoTitle(videoId) {
+  if (typeof videoId !== "string" || !videoId) return null;
+  try {
+    const url = `https://www.youtube.com/oembed?url=${encodeURIComponent(
+      `https://www.youtube.com/watch?v=${videoId}`
+    )}&format=json`;
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const data = await response.json();
+    return typeof data.title === "string" && data.title ? data.title : null;
+  } catch (error) {
+    console.error("youtubeUtils.js: failed to fetch video title:", error);
+    return null;
+  }
 }
