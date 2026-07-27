@@ -103,12 +103,7 @@ let playerReadyPromise = null;
 let lastLoadedVideoId = null;
 let currentQueueSeed = null;
 let currentQueueIndex = null;
-let driftCheckIntervalId = null;
-let otherPlaybackPosition = null;
-let otherPlaybackPositionAt = null;
-let otherIsPlayingActualVideo = false;
-const DRIFT_THRESHOLD_SECONDS = 2;
-const DRIFT_CHECK_INTERVAL_MS = 5000;
+
 
 // Fresh per page load — never persisted — so a stale tab (bfcache,
 // suspended background tab) can be told apart from the current one.
@@ -282,12 +277,7 @@ async function joinRoom() {
     renderPlayerState(playerData.playbackState || "waiting");
     renderLastAction(playerData.lastAction, playerData.actionBy);
 
-    if (playerData.positionBy && playerData.positionBy !== mySlot) {
-      otherPlaybackPosition = playerData.position ?? null;
-      otherPlaybackPositionAt = playerData.positionAt ?? null;
-    }
-    otherIsPlayingActualVideo = mySlot === "user1" ? !!playerData.user2Playing : !!playerData.user1Playing;
-
+    
     if (playerData.actionId && playerData.actionId !== lastHandledActionId) {
       lastHandledActionId = playerData.actionId;
       handlePlayerAction(playerData);
@@ -296,7 +286,6 @@ async function joinRoom() {
 
   joining = false;
   setJoinedState(true);
-  startDriftCorrection();
 }
 
 const LIBRARY_MESSAGES = {
@@ -346,7 +335,6 @@ async function handleLeaveRoom() {
     clearInterval(countdownIntervalId);
     countdownIntervalId = null;
   }
-  stopDriftCorrection();
   [stopPresenceListener, stopRoomListener, stopReadyListener, stopSyncListener, stopPlayerListener, stopQueueListener].forEach(
     (stop) => stop && stop()
   );
@@ -502,47 +490,7 @@ async function startFlowerBackedPlayback() {
   }
 }
 
-function startDriftCorrection() {
-  if (driftCheckIntervalId) return;
-  driftCheckIntervalId = setInterval(async () => {
-    try {
-      const amPlaying = isPlayingActualVideo();
-      setPlayingState(mySlot, amPlaying).catch((error) =>
-        console.error("Failed to report playing state:", error)
-      );
-      if (!amPlaying) return; // never seek a player that hasn't started the real video
 
-      const myPosition = getCurrentTime();
-      reportPlaybackPosition(mySlot, myPosition).catch((error) =>
-        console.error("Failed to report playback position:", error)
-      );
-
-      if (!otherIsPlayingActualVideo || otherPlaybackPosition == null || otherPlaybackPositionAt == null) {
-        return; // other side is on an ad/buffering — leave room, queue, and sync alone and just wait
-      }
-
-      const elapsedSeconds = (getCorrectedNow() - otherPlaybackPositionAt) / 1000;
-      const estimatedOtherPosition = otherPlaybackPosition + elapsedSeconds;
-      const drift = estimatedOtherPosition - myPosition;
-
-      if (drift > DRIFT_THRESHOLD_SECONDS) {
-        seekTo(estimatedOtherPosition); // I'm the delayed one — catch up. If I'm ahead instead, do nothing; the other device corrects itself.
-      }
-    } catch (error) {
-      console.error("Drift correction check failed (ignored):", error);
-    }
-  }, DRIFT_CHECK_INTERVAL_MS);
-}
-
-function stopDriftCorrection() {
-  if (driftCheckIntervalId) {
-    clearInterval(driftCheckIntervalId);
-    driftCheckIntervalId = null;
-  }
-  otherPlaybackPosition = null;
-  otherPlaybackPositionAt = null;
-  otherIsPlayingActualVideo = false;
-}
 
 function runCountdown(startAtMillis) {
   if (countdownIntervalId) clearInterval(countdownIntervalId);
