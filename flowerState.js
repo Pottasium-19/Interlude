@@ -212,6 +212,21 @@ export function listenToFlower(onChange) {
   return unsubscribe;
 }
 
+/**
+ * Starts a live listener on any user's flower by userId — including
+ * someone else's. Independent of listenToFlower(): doesn't touch this
+ * module's own `layers`, and returns its own separate stop function,
+ * so it can run alongside the caller's own flower listener.
+ */
+export function listenToFlowerById(userId, onChange) {
+  if (typeof userId !== "string" || !userId) return () => {};
+  return onSnapshot(
+    doc(db, "flowers", userId),
+    (snap) => onChange(normalizeLayers(snap.exists() ? snap.data() : null)),
+    (error) => console.error("flowerState.js: listener error (other user):", error)
+  );
+}
+
 /** Stops the live listener started by listenToFlower(). No-op if not listening. */
 export function stopFlowerListening() {
   if (unsubscribe) {
