@@ -13,7 +13,8 @@ import {
   claimHostIfVacant,
   releaseSlot,
   releaseStaleSlot,
-  clearStoredSlot
+  clearStoredSlot,
+  hasStoredSlot
 } from "./room.js";
 import {
   setReady,
@@ -137,6 +138,10 @@ function init() {
     previous: handlePrevious,
     next: handleNext
   });
+
+    if (hasStoredSlot()) {
+    joinRoom(); // refresh — silently rejoin instead of requiring another Join click
+    }
 }
 
 function initFlower() {
@@ -619,10 +624,8 @@ function runCountdown(startAtMillis) {
       clearInterval(countdownIntervalId);
       countdownIntervalId = null;
       startFlowerBackedPlayback();
-      setTimeout(async () => {
+      setTimeout(() => {
         renderCountdown("");
-        await resetReadyAndCountdown();
-        bothReadyHandled = false;
       }, 1000);
     } else if (secondsLeft <= 3) {
       renderCountdown(String(secondsLeft));
