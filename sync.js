@@ -72,9 +72,20 @@ export function listenToSync(callback) {
 }
 
 /** Resets ready flags and marks the countdown inactive after it completes. */
+/** Resets ready flags and marks the countdown inactive after it completes. */
 export async function resetReadyAndCountdown() {
   await setDoc(readyDocRef, { user1Ready: false, user2Ready: false }, { merge: true });
   await setDoc(syncDocRef, { active: false }, { merge: true });
+}
+
+/**
+ * Sets (or clears, with null) which video should become "current" the
+ * next time a countdown finishes — used by the Flower's manual "Play
+ * This Song" action. Lives on the same sync doc both clients already
+ * listen to; no second sync channel.
+ */
+export async function setManualPlayVideoId(videoId) {
+  await setDoc(syncDocRef, { manualPlayVideoId: videoId || null }, { merge: true });
 }
 
 // ---------------------------------------------------------------------
