@@ -51,6 +51,12 @@ export function renderReadyStatus({ user1Ready, user2Ready }, mySlot) {
   return myReady;
 }
 
+export function setPlaybackControlsEnabled(enabled) {
+  [el.playBtn(), el.pauseBtn(), el.prevBtn(), el.nextBtn()].forEach((btn) => {
+    btn.disabled = !enabled;
+  });
+}
+
 export function renderCountdown(text) {
   el.countdownDisplay().textContent = text;
 }
