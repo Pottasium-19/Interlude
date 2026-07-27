@@ -8,7 +8,8 @@ import {
   doc,
   setDoc,
   getDoc,
-  onSnapshot
+  onSnapshot,
+  runTransaction
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getCorrectedNow } from "./clock.js";
 
@@ -121,4 +122,62 @@ export function listenToQueue(callback) {
     (snap) => callback(snap.exists() ? snap.data() : { user1Songs: [], user2Songs: [] }),
     (error) => console.error("Queue listener error:", error)
   );
+}
+
+// ---------------------------------------------------------------------
+// Queue regeneration (seed) — reached the end of the current queue
+// ---------------------------------------------------------------------
+
+/**
+ * Transactional compare-and-swap on the sync doc's (queueSeed,
+ * queueIndex): only writes the new seed if the doc still shows the
+ * (currentSeed, currentIndex) the caller last observed. If another
+ * client already advanced it first, this is a no-op that resolves
+ * false — the race-condition guard that keeps the queue from
+ * regenerating twice when both devices detect the last song ending
+ * near-simultaneously.
+ */
+export async function advanceQueueIfAtEnd(currentSeed, currentIndex, newSeed) {
+  try {
+    return await runTransaction(db, async (transaction) => {
+      const snap = await transaction.get(syncDocRef);
+      const data = snap.exists() ? snap.data() : {};
+      if (data.queueSeed !== currentSeed || data.queueIndex !== currentIndex) {
+        return false;
+      }
+      transaction.set(syncDocRef, { queueSeed: newSeed, queueIndex: 0 }, { merge: true });
+      return true;
+    });
+  } catch (error) {
+    console.error("Failed to advance queue seed:", error);
+    return false;
+  }
+}
+
+/** Persists the current position within the (already-agreed) queue, e.g. after Next/Previous. */
+export async function setQueueIndex(index) {
+  await setDoc(syncDocRef, { queueIndex: index }, { merge: true });
+}
+
+// ---------------------------------------------------------------------
+// Playback drift correction
+// ---------------------------------------------------------------------
+
+/** Reports this device's current playback position, for the other client's drift check. */
+export async function reportPlaybackPosition(slot, positionSeconds) {
+  await setDoc(
+    playerDocRef,
+    { position: positionSeconds, positionAt: getCorrectedNow(), positionBy: slot },
+    { merge: true }
+  );
+}
+
+/**
+ * Marks whether this device has actually started playing the real
+ * video (as opposed to still buffering or on an ad). Both flags
+ * together are what lets the app tell "one side is behind on an ad"
+ * apart from "both sides are genuinely in sync."
+ */
+export async function setPlayingState(slot, isPlayingActualVideo) {
+  await setDoc(playerDocRef, { [`${slot}Playing`]: isPlayingActualVideo }, { merge: true });
 }
