@@ -146,3 +146,15 @@ export function getPlayerState() {
   if (!player) throw new Error("youtube.js: initPlayer() must resolve before getPlayerState()");
   return player.getPlayerState();
 }
+
+/**
+ * True only if the player has actually started playing the real
+ * video — not cued, buffering, or ended. This is the check drift
+ * correction and the "restore sync once both sides are playing" logic
+ * use to avoid seeking or comparing positions on a player that's
+ * still on an ad or hasn't loaded yet.
+ */
+export function isPlayingActualVideo() {
+  if (!player) return false;
+  return player.getPlayerState() === window.YT.PlayerState.PLAYING;
+}
