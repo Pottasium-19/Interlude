@@ -23,8 +23,9 @@ import {
   resetReadyAndCountdown,
   setPlayerAction,
   listenToPlayer,
-  setMyQueueSongs,
-  listenToQueue
+  advanceQueueIfAtEnd,
+  reportPlaybackPosition,
+  setPlayingState
 } from "./sync.js";
 
 import {
@@ -57,14 +58,25 @@ import {
 } from "./flowerState.js";
 
 
-import { initPlayer, loadVideoById, play as playVideo, pause as pauseVideo } from "./youtube.js";
+import {
+  initPlayer,
+  setCallbacks,
+  loadVideoById,
+  play as playVideo,
+  pause as pauseVideo,
+  seekTo,
+  getCurrentTime,
+  isPlayingActualVideo
+} from "./youtube.js";
 
 import {
   syncWith as queueSyncWith,
+  clear as queueClear,
   current as queueCurrent,
   next as queueNext,
   previous as queuePrevious,
-  mergeRoundRobin
+  jumpTo as queueJumpTo,
+  buildSeededQueue
 } from "./queue.js";
 
 let myLibraryVideoIds = [];
@@ -89,6 +101,14 @@ let staleCheckIntervalId = null;
 let joining = false;
 let playerReadyPromise = null;
 let lastLoadedVideoId = null;
+let currentQueueSeed = null;
+let currentQueueIndex = null;
+let driftCheckIntervalId = null;
+let otherPlaybackPosition = null;
+let otherPlaybackPositionAt = null;
+let otherIsPlayingActualVideo = false;
+const DRIFT_THRESHOLD_SECONDS = 2;
+const DRIFT_CHECK_INTERVAL_MS = 5000;
 
 // Fresh per page load — never persisted — so a stale tab (bfcache,
 // suspended background tab) can be told apart from the current one.
@@ -99,6 +119,7 @@ function init() {
   initLibrary();
   initFlower();
   playerReadyPromise = initPlayer("youtube-player");
+  setCallbacks({ onEnd: handleNext, onError: () => handleNext() });
   bindJoinButton(joinRoom);
   bindLeaveButton(handleLeaveRoom);
   bindReadyButton(async () => {
@@ -107,8 +128,8 @@ function init() {
   bindPlayerControls({
     play: () => setPlayerAction("play", mySlot, queueCurrent()),
     pause: () => setPlayerAction("pause", mySlot),
-    previous: () => setPlayerAction("previous", mySlot, queuePrevious()),
-    next: () => setPlayerAction("next", mySlot, queueNext())
+    previous: handlePrevious,
+    next: handleNext
   });
 }
 
@@ -133,6 +154,56 @@ async function handleFlowerMove(videoId, toLayer) {
   const applied = await movePetalRemote(videoId, toLayer);
   if (!applied) {
     renderLibraryMessage(`Couldn't move to ${toLayer} — it's probably full.`);
+  }
+}
+
+function handlePrevious() {
+  const prevVideoId = queuePrevious();
+  if (prevVideoId) {
+    setPlayerAction("previous", mySlot, prevVideoId).catch((error) =>
+      console.error("Failed to go to previous song:", error)
+    );
+  }
+}
+
+/**
+ * The single place "advance to the next song" happens — used by the
+ * Next button AND by the player's onEnd/onError callbacks, so a
+ * natural song end goes through exactly the same flow as a manual
+ * click. If the local queue has nothing left, hands off to
+ * regenerateQueueAndAdvance() instead of any separate end-of-song logic.
+ */
+function handleNext() {
+  const nextVideoId = queueNext();
+  if (nextVideoId) {
+    setPlayerAction("next", mySlot, nextVideoId).catch((error) =>
+      console.error("Failed to advance to next song:", error)
+    );
+  } else {
+    regenerateQueueAndAdvance();
+  }
+}
+
+/**
+ * Called when the queue has run out. Proposes a brand-new queueSeed
+ * via the same race-guarded compare-and-swap in sync.js; only the
+ * device that wins actually writes it, so the queue advances exactly
+ * once even if both devices hit the end near-simultaneously. Either
+ * way — won or lost — the new queue reaches this device the same way
+ * any other playback start does: through the existing synchronized
+ * countdown (scheduleCountdown → listenToSync → runCountdown →
+ * startFlowerBackedPlayback). No separate "how a new queue starts"
+ * code path.
+ */
+async function regenerateQueueAndAdvance() {
+  const newSeed = crypto.randomUUID();
+  try {
+    const won = await advanceQueueIfAtEnd(currentQueueSeed, currentQueueIndex, newSeed);
+    if (won) {
+      await scheduleCountdown();
+    }
+  } catch (error) {
+    console.error("Failed to regenerate queue:", error);
   }
 }
 
@@ -211,6 +282,12 @@ async function joinRoom() {
     renderPlayerState(playerData.playbackState || "waiting");
     renderLastAction(playerData.lastAction, playerData.actionBy);
 
+    if (playerData.positionBy && playerData.positionBy !== mySlot) {
+      otherPlaybackPosition = playerData.position ?? null;
+      otherPlaybackPositionAt = playerData.positionAt ?? null;
+    }
+    otherIsPlayingActualVideo = mySlot === "user1" ? !!playerData.user2Playing : !!playerData.user1Playing;
+
     if (playerData.actionId && playerData.actionId !== lastHandledActionId) {
       lastHandledActionId = playerData.actionId;
       handlePlayerAction(playerData);
@@ -219,6 +296,7 @@ async function joinRoom() {
 
   joining = false;
   setJoinedState(true);
+  startDriftCorrection();
 }
 
 const LIBRARY_MESSAGES = {
@@ -320,6 +398,8 @@ async function maybeScheduleCountdown(readyData) {
   if (bothReady && !bothReadyHandled) {
     bothReadyHandled = true;
     if (myUserId === currentHostId) {
+      const newSeed = crypto.randomUUID();
+      await advanceQueueIfAtEnd(currentQueueSeed, currentQueueIndex, newSeed);
       await scheduleCountdown();
     }
   } else if (!bothReady) {
@@ -347,7 +427,10 @@ async function maybeTakeOverHost() {
 }
 
 function handleSyncUpdate(syncData) {
-  if (!syncData || !syncData.active || !syncData.countdownStartAt) return;
+  if (!syncData) return;
+  if (syncData.queueSeed !== undefined) currentQueueSeed = syncData.queueSeed;
+  if (syncData.queueIndex !== undefined) currentQueueIndex = syncData.queueIndex;
+  if (!syncData.active || !syncData.countdownStartAt) return;
   if (syncData.countdownId === lastHandledCountdownId) return; // already running this one
   lastHandledCountdownId = syncData.countdownId;
   runCountdown(syncData.countdownStartAt);
@@ -356,9 +439,13 @@ function handleSyncUpdate(syncData) {
 async function handlePlayerAction(playerData) {
   try {
     await playerReadyPromise;
-    if (playerData.videoId && playerData.videoId !== lastLoadedVideoId) {
-      lastLoadedVideoId = playerData.videoId;
-      loadVideoById(playerData.videoId);
+
+    if (playerData.videoId) {
+      queueJumpTo(playerData.videoId); // idempotent — keeps this device's local pointer aligned with whatever's actually playing
+      if (playerData.videoId !== lastLoadedVideoId) {
+        lastLoadedVideoId = playerData.videoId;
+        loadVideoById(playerData.videoId);
+      }
     }
     if (playerData.lastAction === "play") playVideo();
     else if (playerData.lastAction === "pause") pauseVideo();
@@ -378,6 +465,16 @@ async function handlePlayerAction(playerData) {
  * the resulting queue matches on both sides without ever writing a
  * shared flower to Firestore.
  */
+
+/**
+ * Builds the shared playback queue the moment playback starts (initial
+ * Ready-triggered countdown, or a queue regeneration): reads both
+ * users' private flowers, deterministically merges + shuffles them
+ * using the current shared queueSeed (buildSeededQueue, in queue.js —
+ * reuses the same merge/dedupe logic either way), and plays whatever
+ * ends up current. Nothing here is persisted to Firestore beyond the
+ * seed itself — every client rebuilds the same queue locally.
+ */
 async function startFlowerBackedPlayback() {
   try {
     const [myFlower, otherFlower] = await Promise.all([
@@ -386,9 +483,10 @@ async function startFlowerBackedPlayback() {
     ]);
     const myPetals = [...myFlower.outer, ...myFlower.middle, ...myFlower.inner];
     const otherPetals = [...otherFlower.outer, ...otherFlower.middle, ...otherFlower.inner];
-    const merged = mergeRoundRobin(myPetals, otherPetals);
+    const seededQueue = buildSeededQueue(myPetals, otherPetals, currentQueueSeed || "default-seed");
 
-    queueSyncWith(merged);
+    queueClear();
+    queueSyncWith(seededQueue);
     const currentVideoId = queueCurrent();
 
     if (currentVideoId) {
@@ -399,6 +497,48 @@ async function startFlowerBackedPlayback() {
   } catch (error) {
     console.error("Failed to build merged flower queue:", error);
   }
+}
+
+function startDriftCorrection() {
+  if (driftCheckIntervalId) return;
+  driftCheckIntervalId = setInterval(async () => {
+    try {
+      const amPlaying = isPlayingActualVideo();
+      setPlayingState(mySlot, amPlaying).catch((error) =>
+        console.error("Failed to report playing state:", error)
+      );
+      if (!amPlaying) return; // never seek a player that hasn't started the real video
+
+      const myPosition = getCurrentTime();
+      reportPlaybackPosition(mySlot, myPosition).catch((error) =>
+        console.error("Failed to report playback position:", error)
+      );
+
+      if (!otherIsPlayingActualVideo || otherPlaybackPosition == null || otherPlaybackPositionAt == null) {
+        return; // other side is on an ad/buffering — leave room, queue, and sync alone and just wait
+      }
+
+      const elapsedSeconds = (getCorrectedNow() - otherPlaybackPositionAt) / 1000;
+      const estimatedOtherPosition = otherPlaybackPosition + elapsedSeconds;
+      const drift = estimatedOtherPosition - myPosition;
+
+      if (drift > DRIFT_THRESHOLD_SECONDS) {
+        seekTo(estimatedOtherPosition); // I'm the delayed one — catch up. If I'm ahead instead, do nothing; the other device corrects itself.
+      }
+    } catch (error) {
+      console.error("Drift correction check failed (ignored):", error);
+    }
+  }, DRIFT_CHECK_INTERVAL_MS);
+}
+
+function stopDriftCorrection() {
+  if (driftCheckIntervalId) {
+    clearInterval(driftCheckIntervalId);
+    driftCheckIntervalId = null;
+  }
+  otherPlaybackPosition = null;
+  otherPlaybackPositionAt = null;
+  otherIsPlayingActualVideo = false;
 }
 
 function runCountdown(startAtMillis) {
