@@ -34,7 +34,7 @@ import {
   renderCountdown,
   renderPlayerState,
   renderLastAction,
-bindReadyButton,
+  bindReadyButton,
   bindPlayerControls,
   bindLeaveButton,
   bindJoinButton,
@@ -44,7 +44,8 @@ bindReadyButton,
   renderLibrary,
   renderLibraryMessage,
   bindLibraryAdd,
-  renderFlower
+  renderFlower,
+  renderQueueCount
 } from "./ui.js";
 
 import { listen as listenToLibrary, add as addToLibrary, remove as removeFromLibrary } from "./library.js";
@@ -54,7 +55,8 @@ import {
   addPetalRemote,
   removePetalRemote,
   movePetalRemote,
-  getFlowerSnapshot
+  getFlowerSnapshot,
+  listenToFlowerById
 } from "./flowerState.js";
 
 
@@ -103,6 +105,10 @@ let playerReadyPromise = null;
 let lastLoadedVideoId = null;
 let currentQueueSeed = null;
 let currentQueueIndex = null;
+let myFlowerVideoIds = [];
+let otherFlowerVideoIds = [];
+let stopOtherFlowerListener = null;
+let lastOtherUserIdForFlowerListener = null;
 
 
 // Fresh per page load — never persisted — so a stale tab (bfcache,
@@ -131,7 +137,14 @@ function init() {
 function initFlower() {
   listenToFlower((layers) => {
     renderFlower(layers, handleFlowerRemove, handleFlowerMove);
+    myFlowerVideoIds = [...layers.outer, ...layers.middle, ...layers.inner];
+    updateQueueCount();
   });
+}
+
+function updateQueueCount() {
+  const combined = new Set([...myFlowerVideoIds, ...otherFlowerVideoIds]);
+  renderQueueCount(combined.size);
 }
 
 async function handleFlowerAdd(videoId, layer) {
@@ -243,6 +256,22 @@ async function joinRoom() {
     otherConnected = !!presence && presence.connected && !isPresenceStale(presence.lastSeen);
     refreshConnectionLabel();
     maybeTakeOverHost();
+
+    if (otherUserId !== lastOtherUserIdForFlowerListener) {
+      lastOtherUserIdForFlowerListener = otherUserId;
+      if (stopOtherFlowerListener) {
+        stopOtherFlowerListener();
+        stopOtherFlowerListener = null;
+      }
+      otherFlowerVideoIds = [];
+      if (otherUserId) {
+        stopOtherFlowerListener = listenToFlowerById(otherUserId, (layers) => {
+          otherFlowerVideoIds = [...layers.outer, ...layers.middle, ...layers.inner];
+          updateQueueCount();
+        });
+      }
+      updateQueueCount();
+    }
   });
   // Re-check staleness on a timer too, in case the other user's tab
   // died without ever writing a "disconnected" flag. This is also what
@@ -335,6 +364,15 @@ async function handleLeaveRoom() {
     clearInterval(countdownIntervalId);
     countdownIntervalId = null;
   }
+
+  if (stopOtherFlowerListener) {
+    stopOtherFlowerListener();
+    stopOtherFlowerListener = null;
+  }
+  otherFlowerVideoIds = [];
+  lastOtherUserIdForFlowerListener = null;
+  updateQueueCount();
+  
   [stopPresenceListener, stopRoomListener, stopReadyListener, stopSyncListener, stopPlayerListener, stopQueueListener].forEach(
     (stop) => stop && stop()
   );
