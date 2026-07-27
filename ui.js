@@ -114,11 +114,11 @@ export function renderLibrary(songs, onRemove, onAddToFlower) {
   const list = el.libraryList();
   list.innerHTML = "";
 
-  songs.forEach(({ videoId }) => {
+  songs.forEach(({ videoId, title }) => {
     const item = document.createElement("li");
 
     const label = document.createElement("span");
-    label.textContent = videoId;
+    label.textContent = title || videoId;
     item.appendChild(label);
 
     if (onAddToFlower) {
@@ -164,7 +164,7 @@ export function bindLibraryAdd(handler) {
  * `onMove(videoId, toLayer)` fires on Move, with whichever target layer
  * is selected in that row's dropdown.
  */
-export function renderFlower(layers, onRemove, onMove) {
+export function renderFlower(layers, onRemove, onMove, getTitle) {
   ["outer", "middle", "inner"].forEach((layer) => {
     const list = LAYER_LIST_EL[layer]();
     list.innerHTML = "";
@@ -174,7 +174,7 @@ export function renderFlower(layers, onRemove, onMove) {
       const item = document.createElement("li");
 
       const label = document.createElement("span");
-      label.textContent = videoId;
+      label.textContent = (typeof getTitle === "function" && getTitle(videoId)) || videoId;
       item.appendChild(label);
 
       const moveSelect = document.createElement("select");
