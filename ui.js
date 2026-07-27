@@ -164,7 +164,7 @@ export function bindLibraryAdd(handler) {
  * `onMove(videoId, toLayer)` fires on Move, with whichever target layer
  * is selected in that row's dropdown.
  */
-export function renderFlower(layers, onRemove, onMove, getTitle) {
+export function renderFlower(layers, onRemove, onMove, onPlay, getTitle) {
   ["outer", "middle", "inner"].forEach((layer) => {
     const list = LAYER_LIST_EL[layer]();
     list.innerHTML = "";
@@ -176,6 +176,11 @@ export function renderFlower(layers, onRemove, onMove, getTitle) {
       const label = document.createElement("span");
       label.textContent = (typeof getTitle === "function" && getTitle(videoId)) || videoId;
       item.appendChild(label);
+
+      const playBtn = document.createElement("button");
+      playBtn.textContent = "Play";
+      playBtn.addEventListener("click", () => onPlay(videoId));
+      item.appendChild(playBtn);
 
       const moveSelect = document.createElement("select");
       OTHER_LAYERS[layer].forEach((target) => {
