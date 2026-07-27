@@ -106,6 +106,60 @@ export function syncWith(videoIds) {
 }
 
 /**
+ * Deterministic PRNG (mulberry32) — same numeric seed always produces
+ * the same sequence of "random" numbers, on any client.
+ */
+function mulberry32(seed) {
+  let t = seed >>> 0;
+  return function () {
+    t += 0x6d2b79f5;
+    let r = Math.imul(t ^ (t >>> 15), t | 1);
+    r ^= r + Math.imul(r ^ (r >>> 7), r | 61);
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Turns a string or number seed into a 32-bit integer for mulberry32(). */
+function toNumericSeed(seed) {
+  if (typeof seed === "number" && Number.isFinite(seed)) return seed >>> 0;
+  const str = String(seed);
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (Math.imul(31, hash) + str.charCodeAt(i)) | 0;
+  }
+  return hash >>> 0;
+}
+
+/**
+ * Deterministically shuffles `list` using `seed` — the same seed
+ * always produces the same order on every client. Pure function; does
+ * not touch this module's internal queue state.
+ */
+export function seededShuffle(list, seed) {
+  const result = [...list];
+  const random = mulberry32(toNumericSeed(seed));
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+/**
+ * Builds a brand-new deterministic queue from both users' flower
+ * petal lists: reuses mergeRoundRobin (already used for the
+ * playback-start merge) to combine + dedupe, then deterministically
+ * reorders the result with `seed` so a new seed yields a
+ * differently-ordered but still reproducible queue on both clients.
+ * Pure — the caller still calls syncWith() on the result to actually
+ * update this module's queue/current-index state.
+ */
+export function buildSeededQueue(listA, listB, seed) {
+  const merged = mergeRoundRobin(listA, listB);
+  return seededShuffle(merged, seed);
+}
+
+/**
  * Interleaves two ordered video-id lists round-robin (a[0], b[0], a[1], b[1], ...),
  * skipping a duplicate so it only appears once, at its earliest position.
  */
