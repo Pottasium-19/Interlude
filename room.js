@@ -283,3 +283,7 @@ export const ROOM_ID_EXPORT = ROOM_ID;
 export function getUserId() {
   return getStoredUserId();
 }
+
+export function hasStoredSlot() {
+  return !!getStoredSlot();
+}
