@@ -142,7 +142,11 @@ export async function advanceQueueIfAtEnd(currentSeed, currentIndex, newSeed) {
     return await runTransaction(db, async (transaction) => {
       const snap = await transaction.get(syncDocRef);
       const data = snap.exists() ? snap.data() : {};
-      if (data.queueSeed !== currentSeed || data.queueIndex !== currentIndex) {
+      const existingSeed = data.queueSeed ?? null;
+      const existingIndex = data.queueIndex ?? null;
+      const seedToMatch = currentSeed ?? null;
+      const indexToMatch = currentIndex ?? null;
+      if (existingSeed !== seedToMatch || existingIndex !== indexToMatch) {
         return false;
       }
       transaction.set(syncDocRef, { queueSeed: newSeed, queueIndex: 0 }, { merge: true });
