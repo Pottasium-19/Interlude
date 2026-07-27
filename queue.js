@@ -105,6 +105,7 @@ export function syncWith(videoIds) {
     : Math.min(Math.max(currentIndex, 0), items.length - 1);
 }
 
+
 /**
  * Deterministic PRNG (mulberry32) — same numeric seed always produces
  * the same sequence of "random" numbers, on any client.
@@ -117,6 +118,14 @@ function mulberry32(seed) {
     r ^= r + Math.imul(r ^ (r >>> 7), r | 61);
     return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+/** Moves the current pointer directly to `videoId` if it's in the queue. No-op (returns null) if not found. Safe to call repeatedly — it's an absolute set, not a step, so calling it twice with the same id is harmless. */
+export function jumpTo(videoId) {
+  const index = items.indexOf(videoId);
+  if (index === -1) return null;
+  currentIndex = index;
+  return items[currentIndex];
 }
 
 /** Turns a string or number seed into a 32-bit integer for mulberry32(). */
