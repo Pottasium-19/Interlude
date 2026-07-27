@@ -158,6 +158,17 @@ export async function advanceQueueIfAtEnd(currentSeed, currentIndex, newSeed) {
   }
 }
 
+export async function clearPlayerState() {
+  await setDoc(playerDocRef, {
+    playbackState: "waiting",
+    lastAction: null,
+    actionBy: null,
+    actionAt: null,
+    actionId: null,
+    videoId: null
+  }, { merge: false });
+}
+
 /** Persists the current position within the (already-agreed) queue, e.g. after Next/Previous. */
 export async function setQueueIndex(index) {
   await setDoc(syncDocRef, { queueIndex: index }, { merge: true });
