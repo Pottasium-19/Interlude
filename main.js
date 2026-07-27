@@ -346,6 +346,7 @@ async function handleLeaveRoom() {
     clearInterval(countdownIntervalId);
     countdownIntervalId = null;
   }
+  stopDriftCorrection();
   [stopPresenceListener, stopRoomListener, stopReadyListener, stopSyncListener, stopPlayerListener, stopQueueListener].forEach(
     (stop) => stop && stop()
   );
@@ -376,6 +377,8 @@ async function handleLeaveRoom() {
   lastHandledActionId = null;
   currentHostId = null;
   otherUserId = null;
+  currentQueueSeed = null;
+  currentQueueIndex = null;
 
   renderConnectionStatus("Not connected");
   renderReadyStatus({ user1Ready: false, user2Ready: false }, "user1");
