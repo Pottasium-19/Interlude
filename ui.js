@@ -146,11 +146,11 @@ function buildGardenFlowerNode(flowerId, label) {
 export function bindFlowerSelect(handler) {
   [el.gardenFlowerPink(), el.gardenFlowerLavender()].forEach((node) => {
     if (!node) return;
-    node.addEventListener("click", () => handler());
+    node.addEventListener("click", () => handler(node.dataset.flower));
     node.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        handler();
+        handler(node.dataset.flower);
       }
     });
   });
@@ -163,24 +163,49 @@ export function bindFlowerSelect(handler) {
  * change. Pass (null, false) to return both to the neutral pre-join
  * state.
  */
+const GARDEN_FLOWER_NAMES = { pink: "Pink", lavender: "Lavender" };
+
 export function setGardenFlowerRoles(myFlowerId, isJoined) {
   ["pink", "lavender"].forEach((flowerId) => {
     const node = document.getElementById(`garden-flower-${flowerId}`);
     if (!node) return;
 
-    node.classList.remove("garden-flower--mine", "garden-flower--partner", "garden-flower--joined");
+    node.classList.remove(
+      "garden-flower--mine",
+      "garden-flower--partner",
+      "garden-flower--joined",
+      "garden-flower--unavailable"
+    );
     node.removeAttribute("aria-disabled");
+
+    const label = node.querySelector(".garden-flower__label");
+    if (label) label.textContent = GARDEN_FLOWER_NAMES[flowerId];
 
     if (isJoined) {
       node.classList.add("garden-flower--joined");
       if (flowerId === myFlowerId) {
         node.classList.add("garden-flower--mine");
+        if (label) label.textContent = `${GARDEN_FLOWER_NAMES[flowerId]} (You)`;
       } else {
         node.classList.add("garden-flower--partner");
         node.setAttribute("aria-disabled", "true");
       }
     }
   });
+}
+
+/**
+ * Marks a single garden flower unavailable after a failed claim
+ * (SLOT_TAKEN) — never touches the other flower, per spec: a taken
+ * flower shows unavailable, it does not silently reassign to the
+ * other one. Cleared automatically the next time setGardenFlowerRoles
+ * runs (join success or leave/reset), since that strips every state
+ * class before reapplying.
+ */
+export function setGardenFlowerUnavailable(flowerId) {
+  const node = document.getElementById(`garden-flower-${flowerId}`);
+  if (!node) return;
+  node.classList.add("garden-flower--unavailable");
 }
 
 export function bindPlayerControls(handlers) {
