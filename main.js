@@ -340,8 +340,12 @@ async function joinRoom() {
   // Re-check staleness on a timer too, in case the other user's tab
   // died without ever writing a "disconnected" flag. This is also what
   // notices a stale host and triggers failover even with no new snapshot.
-  staleCheckIntervalId = setInterval(() => {
-    refreshConnectionLabel();
+    staleCheckIntervalId = setInterval(() => {
+    const stillConnected =
+      !!latestOtherPresence &&
+      latestOtherPresence.connected &&
+      !isPresenceStale(latestOtherPresence.lastSeen);
+    updateOtherConnected(stillConnected);
     maybeTakeOverHost();
     if (!otherConnected) {
       releaseStaleSlot(otherSlot).catch((error) =>
@@ -352,6 +356,13 @@ async function joinRoom() {
 
   stopRoomListener = listenToRoom((roomData) => {
     currentHostId = roomData ? roomData.hostId : null;
+
+    const otherPresentNow = !!(roomData && roomData[`${otherSlot}Id`]);
+    if (otherWasPresentInRoom && !otherPresentNow) {
+      handlePartnerLeft();
+    }
+    otherWasPresentInRoom = otherPresentNow;
+
     if (!roomData || !roomData.user1Id || !roomData.user2Id) {
       renderConnectionStatus("Waiting for second user...");
     } else {
