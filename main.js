@@ -70,6 +70,7 @@ import {
 
 import {
   initPlayer,
+  recreatePlayer,
   setCallbacks,
   loadVideoById,
   play as playVideo,
