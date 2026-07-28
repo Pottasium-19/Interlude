@@ -45,7 +45,7 @@ import {
   bindReloadButton,
   bindLeaveButton,
   bindJoinButton,
-  bindFlowe5Select,
+  bindFlowerSelect,
   setControlsEnabled,
   setJoinedState,
   setJoinButtonEnabled,
