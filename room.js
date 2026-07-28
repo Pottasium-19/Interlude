@@ -59,9 +59,30 @@ export function clearStoredSlot() {
  * Throws an Error with message "ROOM_FULL" if a third distinct browser
  * tries to join.
  */
-export async function claimSlot() {
+/**
+ * Claims a slot ("user1" or "user2") in the shared room.
+ *
+ * `preferredFlower` — "pink" or "lavender" — determines which slot is
+ * requested (pink maps to user1, lavender to user2; same mapping as
+ * myFlowerId() in main.js). If that slot is already claimed by someone
+ * else and not stale, this throws "SLOT_TAKEN" — it never falls back
+ * to the other slot. Pass no argument for the reconnect path, where
+ * the stored slot is reclaimed without a flower preference.
+ *
+ * On reconnect (refresh, dropped network), the same browser will reclaim
+ * its previous slot instead of being treated as a new user, because the
+ * slot + userId pair is persisted in localStorage and cross-checked
+ * against what's stored in Firestore.
+ *
+ * Throws "ROOM_FULL" if a third distinct browser joins with no
+ * preference and both slots are taken. Throws "SLOT_TAKEN" if a
+ * specific preferred slot is requested and already occupied.
+ */
+export async function claimSlot(preferredFlower) {
   const userId = getStoredUserId();
   const existingSlot = getStoredSlot();
+  const preferredSlot =
+    preferredFlower === "pink" ? "user1" : preferredFlower === "lavender" ? "user2" : null;
 
   const slot = await runTransaction(db, async (tx) => {
     const snap = await tx.get(roomDocRef);
@@ -92,10 +113,30 @@ export async function claimSlot() {
       !!data.user2Id &&
       (!user2PresenceSnap.exists() || isPresenceStale(user2PresenceSnap.data().lastSeen));
 
-    // Try to claim the first open (or abandoned) slot. The first user to
-    // ever create the room also becomes the initial host (see
-    // claimHostIfVacant for how that responsibility transfers later if
-    // they disconnect).
+    // Deterministic flower choice: claim exactly the requested slot,
+    // or fail — never silently hand back the other one.
+    if (preferredSlot === "user1") {
+      if (data.user1Id && !user1Stale) throw new Error("SLOT_TAKEN");
+      tx.set(
+        roomDocRef,
+        {
+          user1Id: userId,
+          createdAt: data.createdAt || serverTimestamp(),
+          hostId: user1Stale ? userId : data.hostId || userId
+        },
+        { merge: true }
+      );
+      return "user1";
+    }
+
+    if (preferredSlot === "user2") {
+      if (data.user2Id && !user2Stale) throw new Error("SLOT_TAKEN");
+      tx.set(roomDocRef, { user2Id: userId }, { merge: true });
+      return "user2";
+    }
+
+    // No preference (reconnect with no stored slot yet, or legacy
+    // caller) — original first-open-slot behavior.
     if (!data.user1Id || user1Stale) {
       tx.set(
         roomDocRef,
