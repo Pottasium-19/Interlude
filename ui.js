@@ -28,6 +28,9 @@ const el = {
   middleCount: () => document.getElementById("middle-count"),
   innerCount: () => document.getElementById("inner-count"),
   queueCount: () => document.getElementById("queue-count"),
+  gardenScreen: () => document.getElementById("garden-screen"),
+  gardenFlowerPink: () => document.getElementById("garden-flower-pink"),
+  gardenFlowerLavender: () => document.getElementById("garden-flower-lavender"),
 };
 
 const LAYER_LIST_EL = { outer: el.outerList, middle: el.middleList, inner: el.innerList };
@@ -89,6 +92,95 @@ export function setJoinButtonEnabled(enabled) {
 export function setJoinedState(isJoined) {
   el.leaveBtn().disabled = !isJoined;
   setControlsEnabled(isJoined);
+}
+
+/**
+ * Garden entry screen — two flower graphics (pink left, lavender
+ * right). The markup doesn't exist in the HTML yet, so this builds it
+ * and injects it into #garden-screen. Idempotent (guarded by
+ * dataset.built) so re-calling on re-init never tears down/rebuilds
+ * the nodes — that matters once these get animated (swaying) later,
+ * since a rebuild would reset any animation state.
+ *
+ * Structure is deliberately generic (.garden-flower,
+ * .garden-flower__graphic, .garden-flower__label) so a later styling
+ * pass can target it without another ui.js change.
+ */
+export function renderGardenEntry() {
+  const mount = el.gardenScreen();
+  if (!mount || mount.dataset.built === "true") return;
+
+  mount.appendChild(buildGardenFlowerNode("pink", "Pink"));
+  mount.appendChild(buildGardenFlowerNode("lavender", "Lavender"));
+  mount.dataset.built = "true";
+}
+
+function buildGardenFlowerNode(flowerId, label) {
+  const node = document.createElement("div");
+  node.id = `garden-flower-${flowerId}`;
+  node.className = `garden-flower garden-flower--${flowerId}`;
+  node.dataset.flower = flowerId;
+  node.setAttribute("role", "button");
+  node.setAttribute("tabindex", "0");
+  node.setAttribute("aria-label", `${label} flower`);
+
+  const graphic = document.createElement("div");
+  graphic.className = "garden-flower__graphic";
+  node.appendChild(graphic);
+
+  const labelEl = document.createElement("div");
+  labelEl.className = "garden-flower__label";
+  labelEl.textContent = label;
+  node.appendChild(labelEl);
+
+  return node;
+}
+
+/**
+ * Clicking either flower triggers the existing joinRoom() flow — no
+ * separate Join Room screen. Which flower was clicked doesn't matter
+ * (assignment is by room slot, not by click target), so both nodes
+ * get the same handler. Enter/Space mirrors click for the
+ * role="button" nodes above.
+ */
+export function bindFlowerSelect(handler) {
+  [el.gardenFlowerPink(), el.gardenFlowerLavender()].forEach((node) => {
+    if (!node) return;
+    node.addEventListener("click", () => handler());
+    node.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handler();
+      }
+    });
+  });
+}
+
+/**
+ * Call after joinRoom() resolves (and on leave/room-reset) to mark
+ * which garden flower is mine (editable) vs the partner's
+ * (view-only). Both stay visible either way — only state classes
+ * change. Pass (null, false) to return both to the neutral pre-join
+ * state.
+ */
+export function setGardenFlowerRoles(myFlowerId, isJoined) {
+  ["pink", "lavender"].forEach((flowerId) => {
+    const node = document.getElementById(`garden-flower-${flowerId}`);
+    if (!node) return;
+
+    node.classList.remove("garden-flower--mine", "garden-flower--partner", "garden-flower--joined");
+    node.removeAttribute("aria-disabled");
+
+    if (isJoined) {
+      node.classList.add("garden-flower--joined");
+      if (flowerId === myFlowerId) {
+        node.classList.add("garden-flower--mine");
+      } else {
+        node.classList.add("garden-flower--partner");
+        node.setAttribute("aria-disabled", "true");
+      }
+    }
+  });
 }
 
 export function bindPlayerControls(handlers) {
