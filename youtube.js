@@ -82,10 +82,8 @@ function handlePlayerError(event) {
  * Safe to call once per page load. Returns a promise that resolves with
  * the underlying YT.Player instance once it's ready to receive commands.
  */
-export function initPlayer(containerId) {
-  if (player) return Promise.resolve(player);
+function createPlayerInstance(containerId) {
   pendingContainerId = containerId;
-
   return loadYouTubeApi().then(
     () =>
       new Promise((resolve) => {
@@ -105,6 +103,49 @@ export function initPlayer(containerId) {
         });
       })
   );
+}
+
+/**
+ * Creates the YouTube player inside the element with id `containerId`.
+ * Safe to call once per page load. Returns a promise that resolves with
+ * the underlying YT.Player instance once it's ready to receive commands.
+ */
+export function initPlayer(containerId) {
+  if (player) return Promise.resolve(player);
+  return createPlayerInstance(containerId);
+}
+
+/**
+ * Fully destroys the current YouTube player instance and creates a
+ * brand-new one in its place — not a seekTo(0) or a reload on the same
+ * instance. YT.Player replaces its container element with an iframe
+ * and never gives the original element back, even after destroy(), so
+ * the container has to be recreated before a new player can mount
+ * into it. Used by the "Reload"/"Replay Together" button to recover
+ * from desyncs, buffering, or glitches with a genuinely fresh player.
+ */
+export function recreatePlayer(containerId) {
+  if (player) {
+    try {
+      player.destroy();
+    } catch (error) {
+      console.error("youtube.js: failed to destroy player:", error);
+    }
+    player = null;
+  }
+
+  const old = document.getElementById(containerId);
+  const parent = old ? old.parentNode : null;
+  if (old) old.remove();
+  const fresh = document.createElement("div");
+  fresh.id = containerId;
+  if (parent) {
+    parent.appendChild(fresh);
+  } else {
+    console.error(`youtube.js: couldn't find a parent to recreate #${containerId} in`);
+  }
+
+  return createPlayerInstance(containerId);
 }
 
 /** Registers callback handlers. Pass only the ones you want to (re)set. */
