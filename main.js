@@ -158,6 +158,7 @@ function otherFlowerId() {
 
 
 function init() {
+  renderGardenEntry();
   renderConnectionStatus("Not connected");
   initLibrary();
   playerReadyPromise = initPlayer("youtube-player");
@@ -438,6 +439,7 @@ async function joinRoom() {
 
   joining = false;
   setJoinedState(true);
+  setGardenFlowerRoles(myFlowerId(), true);
   setPlaybackControlsEnabled(false);
   sessionActive = false;
 }
@@ -665,6 +667,7 @@ async function handleLeaveRoom() {
   renderReadyStatus({ user1Ready: false, user2Ready: false }, "user1");
   renderCountdown("");
   setJoinedState(false);
+  setGardenFlowerRoles(null, false);
   setJoinButtonEnabled(true);
 }
 
