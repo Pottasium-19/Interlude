@@ -28,7 +28,8 @@ import {
   reportPlaybackPosition,
   setPlayingState,
   clearPlayerState,
-  setManualPlayVideoId
+  setManualPlayVideoId,
+  cancelCountdown
   
 } from "./sync.js";
 
@@ -122,6 +123,10 @@ let lastOtherUserIdForFlowerListener = null;
 let lastLoadedAt = 0;
 let sessionActive = false;
 let latestPlayerData = null;
+let otherSlot = null;
+let otherReady = false;
+let latestOtherPresence = null;
+let otherWasPresentInRoom = false;
 
 // Fresh per page load — never persisted — so a stale tab (bfcache,
 // suspended background tab) can be told apart from the current one.
@@ -194,6 +199,10 @@ async function handleFlowerMove(videoId, toLayer) {
  */
 async function handleFlowerPlay(videoId) {
   if (!mySlot) return;
+  if (!isSessionValid()) {
+    notify("warning", "You can only play once you're both here and Ready.");
+    return;
+  }
   try {
     await setManualPlayVideoId(videoId);
     await scheduleCountdown();
@@ -297,14 +306,19 @@ async function joinRoom() {
     return;
   }
 
-  const otherSlot = mySlot === "user1" ? "user2" : "user1";
+  otherSlot = mySlot === "user1" ? "user2" : "user1";
+  otherReady = false;
+  latestOtherPresence = null;
+  otherWasPresentInRoom = false;
+
+  // Presence: heartbeat for this user, listener for the other user.
 
   // Presence: heartbeat for this user, listener for the other user.
   stopHeartbeat = startHeartbeat(myUserId, mySlot, mySessionId);
   stopPresenceListener = listenToPresence(otherSlot, (presence) => {
     otherUserId = presence ? presence.userId : null;
-    otherConnected = !!presence && presence.connected && !isPresenceStale(presence.lastSeen);
-    refreshConnectionLabel();
+    latestOtherPresence = presence;
+    updateOtherConnected(!!presence && presence.connected && !isPresenceStale(presence.lastSeen));
     maybeTakeOverHost();
 
     if (otherUserId !== lastOtherUserIdForFlowerListener) {
