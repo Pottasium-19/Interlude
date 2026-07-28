@@ -53,6 +53,8 @@ import {
   setPlaybackControlsEnabled
 } from "./ui.js";
 
+import { notify } from "./notifications.js";
+
 import { listen as listenToLibrary, add as addToLibrary, remove as removeFromLibrary } from "./library.js";
 
 import {
