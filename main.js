@@ -199,15 +199,17 @@ async function handleFlowerPlay(videoId) {
     await scheduleCountdown();
   } catch (error) {
     console.error("Failed to start manual play:", error);
+    notify("error", "Couldn't start that song — please try again.");
   }
 }
 
 function handlePrevious() {
   const prevVideoId = queuePrevious();
   if (prevVideoId) {
-    setPlayerAction("previous", mySlot, prevVideoId).catch((error) =>
-      console.error("Failed to go to previous song:", error)
-    );
+    setPlayerAction("previous", mySlot, prevVideoId).catch((error) => {
+      console.error("Failed to go to previous song:", error);
+      notify("error", "Couldn't go to the previous song — please try again.");
+    });
   }
 }
 
@@ -221,9 +223,10 @@ function handlePrevious() {
 function handleNext() {
   const nextVideoId = queueNext();
   if (nextVideoId) {
-    setPlayerAction("next", mySlot, nextVideoId).catch((error) =>
-      console.error("Failed to advance to next song:", error)
-    );
+    setPlayerAction("next", mySlot, nextVideoId).catch((error) => {
+      console.error("Failed to advance to next song:", error);
+      notify("error", "Couldn't skip to the next song — please try again.");
+    });
   } else {
     regenerateQueueAndAdvance();
   }
@@ -257,6 +260,7 @@ async function regenerateQueueAndAdvance() {
     }
   } catch (error) {
     console.error("Failed to regenerate queue:", error);
+    notify("error", "Couldn't refresh the queue — please try again.");
   }
 }
 
@@ -397,8 +401,12 @@ function initLibrary() {
     if (!rawInput || !rawInput.trim()) return;
     const result = await addToLibrary(rawInput);
     renderLibraryMessage(result.ok ? "" : LIBRARY_MESSAGES[result.reason] || "");
+    if (result.ok) {
+      notify("success", "Added to your library.");
+    } else {
+      notify("warning", LIBRARY_MESSAGES[result.reason] || "Couldn't save that song.");
+    }
   });
-}
 
 function refreshConnectionLabel() {
   renderConnectionStatus(otherConnected ? "Both connected" : "Waiting for second user...");
@@ -444,6 +452,7 @@ async function handleLeaveRoom() {
     }
   } catch (error) {
     console.error("Leave room failed:", error);
+    notify("warning", "Left the room, but cleanup on the server didn't fully complete.");
   }
 
   try {
@@ -452,6 +461,7 @@ async function handleLeaveRoom() {
     await resetReadyAndCountdown();
   } catch (error) {
     console.error("Failed to clear session state on leave:", error);
+    notify("warning", "Left the room, but some session state may not have reset cleanly.");
   }
 
   clearStoredSlot();
@@ -568,12 +578,13 @@ async function resumeActiveSession() {
     sessionActive = true;
     setPlaybackControlsEnabled(true);
 
-    if (latestPlayerData && latestPlayerData.actionId) {
+     if (latestPlayerData && latestPlayerData.actionId) {
       lastHandledActionId = latestPlayerData.actionId;
       handlePlayerAction(latestPlayerData);
     }
   } catch (error) {
     console.error("Failed to resume active session:", error);
+    notify("error", "Couldn't reconnect to the current session — try refreshing.");
   }
 }
 
@@ -589,11 +600,12 @@ async function handlePlayerAction(playerData) {
   loadVideoById(playerData.videoId);
 }
     }
-    if (playerData.lastAction === "play") playVideo();
+     if (playerData.lastAction === "play") playVideo();
     else if (playerData.lastAction === "pause") pauseVideo();
     else if (playerData.lastAction === "previous" || playerData.lastAction === "next") playVideo();
   } catch (error) {
     console.error("Playback side effect failed:", error);
+    notify("error", "Playback ran into a problem — try Play/Pause again.");
   }
 }
 
@@ -646,9 +658,11 @@ async function startFlowerBackedPlayback() {
       await setPlayerAction("play", mySlot, currentVideoId);
     } else {
       console.warn("Countdown finished but both flowers are empty — nothing will play.");
+      notify("info", "Nothing to play yet — add some songs to a flower first.");
     }
   } catch (error) {
     console.error("Failed to build merged flower queue:", error);
+    notify("error", "Couldn't start playback — please try again.");
   }
 }
 
