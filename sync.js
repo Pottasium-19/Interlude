@@ -104,6 +104,20 @@ export async function setManualPlayVideoId(videoId) {
   await setDoc(syncDocRef, { manualPlayVideoId: videoId || null }, { merge: true });
 }
 
+/**
+ * Marks (true) or clears (false) whether the next countdown to
+ * complete should destroy and recreate the player on both devices
+ * before loading the current video, instead of just calling
+ * loadVideoById() on the existing instance — used by the "Reload"/
+ * "Replay Together" button. Same one-shot pattern as
+ * manualPlayVideoId: set once, consumed and cleared by
+ * startFlowerBackedPlayback in main.js the next time a countdown
+ * fires, so it never lingers into a later, unrelated countdown.
+ */
+export async function setReloadRequested(value) {
+  await setDoc(syncDocRef, { reloadRequested: !!value }, { merge: true });
+}
+
 // ---------------------------------------------------------------------
 // Shared player state (no media playback yet — state only)
 // ---------------------------------------------------------------------
