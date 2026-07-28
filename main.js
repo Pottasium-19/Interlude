@@ -54,7 +54,8 @@ import {
   bindLibraryAdd,
   renderFlower,
   renderQueueCount,
-  setPlaybackControlsEnabled
+  setPlaybackControlsEnabled,
+  renderGardenEntry
 } from "./ui.js";
 
 import { notify } from "./notifications.js";
