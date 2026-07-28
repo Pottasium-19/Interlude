@@ -45,6 +45,7 @@ import {
   bindReloadButton,
   bindLeaveButton,
   bindJoinButton,
+  bindFlowe5Select,
   setControlsEnabled,
   setJoinedState,
   setJoinButtonEnabled,
@@ -67,7 +68,7 @@ import {
   movePetalRemote,
   getFlowerSnapshot,
   listenToFlowerById
-} from "./flowerState.js";
+} from "./gardenFlower.js";
 
 
 import {
@@ -122,7 +123,7 @@ let pendingManualPlayVideoId = null;
 let myFlowerVideoIds = [];
 let otherFlowerVideoIds = [];
 let stopOtherFlowerListener = null;
-let lastOtherUserIdForFlowerListener = null;
+let stopMyFlowerListener = null;
 let lastLoadedAt = 0;
 let sessionActive = false;
 let latestPlayerData = null;
@@ -136,13 +137,33 @@ let pendingReloadRequested = false;
 // suspended background tab) can be told apart from the current one.
 const mySessionId = crypto.randomUUID();
 
+/**
+ * Flower assignment is tied to the room slot, not the browser or the
+ * userId: user1 is always "pink", user2 is always "lavender". This is
+ * what makes a reload reclaim the same flower (claimSlot() reclaims
+ * the same slot) and why it doesn't matter which flower graphic was
+ * clicked to trigger joinRoom().
+ */
+function myFlowerId() {
+  if (mySlot === "user1") return "pink";
+  if (mySlot === "user2") return "lavender";
+  return null;
+}
+
+function otherFlowerId() {
+  if (otherSlot === "user1") return "pink";
+  if (otherSlot === "user2") return "lavender";
+  return null;
+}
+
+
 function init() {
   renderConnectionStatus("Not connected");
   initLibrary();
-  initFlower();
   playerReadyPromise = initPlayer("youtube-player");
   setCallbacks({ onEnd: handleAutoNext, onError: handleAutoNext });
   bindJoinButton(joinRoom);
+  bindFlowerSelect(joinRoom); // clicking a flower joins the room directly — no separate Join Room step
   bindLeaveButton(handleLeaveRoom);
   bindReadyButton(async () => {
     await setReady(mySlot, !myCurrentlyReady);
@@ -175,18 +196,18 @@ function updateQueueCount() {
 }
 
 async function handleFlowerAdd(videoId, layer) {
-  const applied = await addPetalRemote(videoId, layer);
+  const applied = await addPetalRemote(myFlowerId(), videoId, layer);
   if (!applied) {
     renderLibraryMessage(`Couldn't add to ${layer} — it may be full or already on the flower.`);
   }
 }
 
 async function handleFlowerRemove(videoId) {
-  await removePetalRemote(videoId);
+  await removePetalRemote(myFlowerId(), videoId);
 }
 
 async function handleFlowerMove(videoId, toLayer) {
-  const applied = await movePetalRemote(videoId, toLayer);
+  const applied = await movePetalRemote(myFlowerId(), videoId, toLayer);
   if (!applied) {
     renderLibraryMessage(`Couldn't move to ${toLayer} — it's probably full.`);
   }
@@ -341,6 +362,18 @@ async function joinRoom() {
   pendingManualPlayVideoId = null;
   pendingReloadRequested = false;
 
+  // Flowers are tied to the room slot, not to whichever userId happens
+  // to occupy it, so both listeners are set up once here, keyed off
+  // mySlot/otherSlot — not re-subscribed every time presence reports
+  // a different otherUserId.
+ initFlower();
+ otherFlowerVideoIds = [];
+ stopOtherFlowerListener = listenToFlowerById(otherFlowerId(), (layers) => {
+  otherFlowerVideoIds = [...layers.outer, ...layers.middle, ...layers.inner];
+   updateQueueCount();
+  });
+  updateQueueCount();
+
   // Presence: heartbeat for this user, listener for the other user.
   stopHeartbeat = startHeartbeat(myUserId, mySlot, mySessionId);
   stopPresenceListener = listenToPresence(otherSlot, (presence) => {
@@ -349,21 +382,6 @@ async function joinRoom() {
     updateOtherConnected(!!presence && presence.connected && !isPresenceStale(presence.lastSeen));
     maybeTakeOverHost();
 
-    if (otherUserId !== lastOtherUserIdForFlowerListener) {
-      lastOtherUserIdForFlowerListener = otherUserId;
-      if (stopOtherFlowerListener) {
-        stopOtherFlowerListener();
-        stopOtherFlowerListener = null;
-      }
-      otherFlowerVideoIds = [];
-      if (otherUserId) {
-        stopOtherFlowerListener = listenToFlowerById(otherUserId, (layers) => {
-          otherFlowerVideoIds = [...layers.outer, ...layers.middle, ...layers.inner];
-          updateQueueCount();
-        });
-      }
-      updateQueueCount();
-    }
   });
   // Re-check staleness on a timer too, in case the other user's tab
   // died without ever writing a "disconnected" flag. This is also what
@@ -439,7 +457,7 @@ function initLibrary() {
         if (!result.ok) {
           renderLibraryMessage(LIBRARY_MESSAGES[result.reason] || "Couldn't remove that song — please try again.");
         }
-        await removePetalRemote(videoId);
+        await removePetalRemote(myFlowerId(), videoId);;
       },
       handleFlowerAdd
     );
@@ -578,8 +596,13 @@ function stopAllRoomListeners() {
     stopOtherFlowerListener();
     stopOtherFlowerListener = null;
   }
+
+  if (stopMyFlowerListener) {
+   stopMyFlowerListener();
+    stopMyFlowerListener = null;
+ }
+  
   otherFlowerVideoIds = [];
-  lastOtherUserIdForFlowerListener = null;
   [stopPresenceListener, stopRoomListener, stopReadyListener, stopSyncListener, stopPlayerListener, stopQueueListener].forEach(
     (stop) => stop && stop()
   );
@@ -722,8 +745,8 @@ function handleSyncUpdate(syncData) {
 async function resumeActiveSession() {
   try {
     const [myFlower, otherFlower] = await Promise.all([
-      getFlowerSnapshot(myUserId),
-      getFlowerSnapshot(otherUserId)
+      getFlowerSnapshot(myFlowerId()),
+     getFlowerSnapshot(otherFlowerId())
     ]);
     const myPetals = [...myFlower.outer, ...myFlower.middle, ...myFlower.inner];
     const otherPetals = [...otherFlower.outer, ...otherFlower.middle, ...otherFlower.inner];
@@ -797,8 +820,8 @@ async function startFlowerBackedPlayback() {
     }
 
     const [myFlower, otherFlower] = await Promise.all([
-      getFlowerSnapshot(myUserId),
-      getFlowerSnapshot(otherUserId)
+      getFlowerSnapshot(myFlowerId()),
+     getFlowerSnapshot(otherFlowerId())
     ]);
     const myPetals = [...myFlower.outer, ...myFlower.middle, ...myFlower.inner];
     const otherPetals = [...otherFlower.outer, ...otherFlower.middle, ...otherFlower.inner];
