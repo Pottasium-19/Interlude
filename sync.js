@@ -79,6 +79,22 @@ export async function resetReadyAndCountdown() {
 }
 
 /**
+ * Cancels an in-progress or upcoming countdown without touching either
+ * user's Ready flag — used when the session becomes invalid mid-
+ * countdown (partner disconnects, leaves, or un-readies) so playback
+ * can't complete a countdown that no longer has both users present.
+ * Deliberately smaller than resetReadyAndCountdown(), which also
+ * clears both Ready flags — this must not, since a user's own Ready
+ * toggle is theirs to control.
+ */
+export async function cancelCountdown() {
+  await setDoc(syncDocRef, { active: false }, { merge: true });
+}
+
+/**
+ * Sets (or clears, with null) which video should become "current" the
+
+/**
  * Sets (or clears, with null) which video should become "current" the
  * next time a countdown finishes — used by the Flower's manual "Play
  * This Song" action. Lives on the same sync doc both clients already
