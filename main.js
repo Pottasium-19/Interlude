@@ -29,7 +29,8 @@ import {
   setPlayingState,
   clearPlayerState,
   setManualPlayVideoId,
-  cancelCountdown
+  cancelCountdown,
+  setReloadRequested
   
 } from "./sync.js";
 
@@ -41,6 +42,7 @@ import {
   renderLastAction,
   bindReadyButton,
   bindPlayerControls,
+  bindReloadButton,
   bindLeaveButton,
   bindJoinButton,
   setControlsEnabled,
@@ -128,6 +130,7 @@ let otherSlot = null;
 let otherReady = false;
 let latestOtherPresence = null;
 let otherWasPresentInRoom = false;
+let pendingReloadRequested = false;
 
 // Fresh per page load — never persisted — so a stale tab (bfcache,
 // suspended background tab) can be told apart from the current one.
@@ -150,6 +153,7 @@ function init() {
     previous: handlePrevious,
     next: handleNext
   });
+  bindReloadButton(handleReload);
 
     if (hasStoredSlot()) {
     joinRoom(); // refresh — silently rejoin instead of requiring another Join click
@@ -210,6 +214,29 @@ async function handleFlowerPlay(videoId) {
   } catch (error) {
     console.error("Failed to start manual play:", error);
     notify("error", "Couldn't start that song — please try again.");
+  }
+}
+
+/**
+ * "Reload" / "Replay Together" — destroys and recreates the YouTube
+ * player on both devices, then restarts the current song via the
+ * exact same synchronized countdown flow as everything else
+ * (scheduleCountdown → listenToSync → runCountdown →
+ * startFlowerBackedPlayback, which is where the actual player
+ * recreation happens once pendingReloadRequested is seen). Not a
+ * seekTo(0) — the player instance itself is thrown away and rebuilt.
+ */
+async function handleReload() {
+  if (!isSessionValid()) {
+    notify("warning", "You can only reload once you're both here and Ready.");
+    return;
+  }
+  try {
+    await setReloadRequested(true);
+    await scheduleCountdown();
+  } catch (error) {
+    console.error("Failed to start reload:", error);
+    notify("error", "Couldn't reload — please try again.");
   }
 }
 
@@ -311,8 +338,8 @@ async function joinRoom() {
   otherReady = false;
   latestOtherPresence = null;
   otherWasPresentInRoom = false;
-
-  // Presence: heartbeat for this user, listener for the other user.
+  pendingManualPlayVideoId = null;
+  pendingReloadRequested = false;
 
   // Presence: heartbeat for this user, listener for the other user.
   stopHeartbeat = startHeartbeat(myUserId, mySlot, mySessionId);
@@ -608,6 +635,8 @@ async function handleLeaveRoom() {
   otherReady = false;
   latestOtherPresence = null;
   otherWasPresentInRoom = false;
+  pendingManualPlayVideoId = null;
+  pendingReloadRequested = false;
 
   renderConnectionStatus("Not connected");
   renderReadyStatus({ user1Ready: false, user2Ready: false }, "user1");
@@ -663,6 +692,7 @@ function handleSyncUpdate(syncData) {
   if (syncData.queueSeed !== undefined) currentQueueSeed = syncData.queueSeed;
   if (syncData.queueIndex !== undefined) currentQueueIndex = syncData.queueIndex;
   if (syncData.manualPlayVideoId !== undefined) pendingManualPlayVideoId = syncData.manualPlayVideoId;
+  if (syncData.reloadRequested !== undefined) pendingReloadRequested = syncData.reloadRequested;
   if (!syncData.active || !syncData.countdownStartAt) return;
   if (syncData.countdownId === lastHandledCountdownId) return; // already running this one
   lastHandledCountdownId = syncData.countdownId;
@@ -757,6 +787,15 @@ async function handlePlayerAction(playerData) {
  */
 async function startFlowerBackedPlayback() {
   try {
+    if (pendingReloadRequested) {
+      pendingReloadRequested = false;
+      setReloadRequested(false).catch((error) =>
+        console.error("Failed to clear reload flag:", error)
+      );
+      playerReadyPromise = recreatePlayer("youtube-player");
+      await playerReadyPromise;
+    }
+
     const [myFlower, otherFlower] = await Promise.all([
       getFlowerSnapshot(myUserId),
       getFlowerSnapshot(otherUserId)
@@ -781,6 +820,12 @@ async function startFlowerBackedPlayback() {
     if (currentVideoId) {
       sessionActive = true;
     setPlaybackControlsEnabled(true);
+      // Always force a genuine reload rather than trusting the current
+      // player already has this video loaded — required both for
+      // Reload (fresh player instance) and for a rejoin landing back
+      // on the same song that was playing before a disconnect, which
+      // must restart fresh rather than resume from where it paused.
+      lastLoadedVideoId = null;
       await setPlayerAction("play", mySlot, currentVideoId);
     } else {
       console.warn("Countdown finished but both flowers are empty — nothing will play.");
