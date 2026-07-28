@@ -372,8 +372,10 @@ async function joinRoom() {
 
   stopReadyListener = listenToReady((readyData) => {
     myCurrentlyReady = renderReadyStatus(readyData, mySlot);
+    otherReady = mySlot === "user1" ? !!readyData.user2Ready : !!readyData.user1Ready;
     maybeScheduleCountdown(readyData);
-  });
+    enforceSessionValidity();
+  }); 
 
   stopSyncListener = listenToSync((syncData) => handleSyncUpdate(syncData));
 
@@ -436,6 +438,99 @@ function initLibrary() {
 
 function refreshConnectionLabel() {
   renderConnectionStatus(otherConnected ? "Both connected" : "Waiting for second user...");
+}
+
+/** The one rule the rest of this file enforces: both present, both Ready. */
+function isSessionValid() {
+  return !!mySlot && otherConnected && myCurrentlyReady && otherReady;
+}
+
+/**
+ * Locally stops playback and locks the controls the moment the shared
+ * session becomes invalid — never writes to Firestore itself, so it's
+ * always safe to call from any listener without risking a write race.
+ * Resuming only ever happens through the existing synchronized
+ * countdown flow once both users are present and Ready again.
+ */
+function suspendLocalSession() {
+  if (sessionActive) {
+    pauseVideo();
+  }
+  sessionActive = false;
+  setPlaybackControlsEnabled(false);
+  if (countdownIntervalId) {
+    clearInterval(countdownIntervalId);
+    countdownIntervalId = null;
+    renderCountdown("");
+  }
+}
+
+/**
+ * Called after anything that could change presence or Ready state
+ * (the presence listener, the ready listener, and the existing
+ * staleness timer — no new listeners). If the session is no longer
+ * valid, stops playback locally and cancels any countdown that can no
+ * longer complete.
+ */
+function enforceSessionValidity() {
+  if (isSessionValid()) return;
+  const wasRunningOrActive = sessionActive || countdownIntervalId !== null;
+  suspendLocalSession();
+  if (wasRunningOrActive) {
+    cancelCountdown().catch((error) =>
+      console.error("Failed to cancel countdown:", error)
+    );
+  }
+}
+
+/**
+ * Single place `otherConnected` ever changes. Detects the true→false
+ * edge (partner's presence just went stale) and runs disconnect
+ * cleanup exactly once per drop, instead of on every repeated 5s
+ * re-check while they stay offline.
+ */
+function updateOtherConnected(connected) {
+  const wasConnected = otherConnected;
+  otherConnected = connected;
+  refreshConnectionLabel();
+  if (wasConnected && !connected) {
+    handlePartnerDisconnected();
+  }
+  enforceSessionValidity();
+}
+
+/**
+ * Runs once, right when the partner's presence is detected stale
+ * (crash, force-close, lost connection — never an explicit Leave
+ * Room, which is handled by handlePartnerLeft instead). A crashed
+ * client never got the chance to clean up after itself, so this does
+ * it on their behalf: clears their stale Ready flag, cancels any
+ * countdown that can't complete, and clears playback state.
+ */
+async function handlePartnerDisconnected() {
+  notify("warning", "Your partner disconnected.");
+  suspendLocalSession();
+  try {
+    if (otherSlot) await setReady(otherSlot, false);
+    await cancelCountdown();
+    await clearPlayerState();
+  } catch (error) {
+    console.error("Failed to clean up after partner disconnect:", error);
+  }
+}
+
+/**
+ * Runs when the partner's slot disappears from the room doc (they
+ * pressed Leave Room). They've already cleaned up their own Ready/
+ * player/countdown state as part of handleLeaveRoom, so this only
+ * needs to react locally and notify.
+ */
+function handlePartnerLeft() {
+  notify("warning", "Your partner left the room.");
+  suspendLocalSession();
+  otherConnected = false;
+  otherUserId = null;
+  refreshConnectionLabel();
 }
 
 function stopAllRoomListeners() {
@@ -508,6 +603,10 @@ async function handleLeaveRoom() {
   setPlaybackControlsEnabled(false);
   currentQueueIndex = null;
   latestPlayerData = null;
+  otherSlot = null;
+  otherReady = false;
+  latestOtherPresence = null;
+  otherWasPresentInRoom = false;
 
   renderConnectionStatus("Not connected");
   renderReadyStatus({ user1Ready: false, user2Ready: false }, "user1");
