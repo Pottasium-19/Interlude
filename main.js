@@ -55,7 +55,9 @@ import {
   renderFlower,
   renderQueueCount,
   setPlaybackControlsEnabled,
-  renderGardenEntry
+  renderGardenEntry,
+  setGardenFlowerRoles,
+  setGardenFlowerUnavailable
 } from "./ui.js";
 
 import { notify } from "./notifications.js";
@@ -165,7 +167,7 @@ function init() {
   playerReadyPromise = initPlayer("youtube-player");
   setCallbacks({ onEnd: handleAutoNext, onError: handleAutoNext });
   bindJoinButton(joinRoom);
-  bindFlowerSelect(joinRoom); // clicking a flower joins the room directly — no separate Join Room step
+  bindFlowerSelect(joinRoom); // clicking a flower claims that specific slot — Pink → user1, Lavender → user2; SLOT_TAKEN if already claimed
   bindLeaveButton(handleLeaveRoom);
   bindReadyButton(async () => {
     await setReady(mySlot, !myCurrentlyReady);
@@ -184,7 +186,7 @@ function init() {
 }
 
 function initFlower() {
-  listenToFlower((layers) => {
+  listenToFlower(myFlowerId(), (layers) => {
     currentFlowerLayers = layers;
     renderFlower(layers, handleFlowerRemove, handleFlowerMove, handleFlowerPlay, (videoId) => myLibraryTitles[videoId]);
     myFlowerVideoIds = [...layers.outer, ...layers.middle, ...layers.inner];
@@ -331,7 +333,7 @@ async function regenerateQueueAndAdvance() {
  * page load. handleLeaveRoom() tears down everything started here, so
  * this can safely run again afterward without a refresh.
  */
-async function joinRoom() {
+async function joinRoom(preferredFlower) {
   if (joining || mySlot) return;
   joining = true;
   stopAllRoomListeners(); // guarantees no leftover listeners survive an incomplete previous join
@@ -342,11 +344,14 @@ async function joinRoom() {
   // since the countdown depends on it.
   try {
     await syncServerTimeOffset();
-    const claimed = await claimSlot();
+    const claimed = await claimSlot(preferredFlower);
     myUserId = claimed.userId;
     mySlot = claimed.slot;
   } catch (error) {
-    if (error.message === "ROOM_FULL") {
+    if (error.message === "SLOT_TAKEN") {
+      renderConnectionStatus(`${preferredFlower === "pink" ? "Pink" : "Lavender"} is already taken.`);
+      setGardenFlowerUnavailable(preferredFlower);
+    } else if (error.message === "ROOM_FULL") {
       renderConnectionStatus("Room is full — only two users are supported.");
     } else {
       console.error("Failed to join room:", error);
