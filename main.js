@@ -407,6 +407,7 @@ function initLibrary() {
       notify("warning", LIBRARY_MESSAGES[result.reason] || "Couldn't save that song.");
     }
   });
+}
 
 function refreshConnectionLabel() {
   renderConnectionStatus(otherConnected ? "Both connected" : "Waiting for second user...");
