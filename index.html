@@ -4,10 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Interlude — Sync Engine (Phase 1)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div id="garden-screen"></div>
+  <div id="garden-screen">
+    <h1 id="garden-title">Interlude</h1>
+    <p id="garden-subtitle">Choose Your Flower</p>
+    <p id="connection-status">Not connected</p>
+  </div>
   <div id="notification-panel" aria-live="polite"></div>
   <main id="app">
     <h1>Interlude — Synchronization Engine</h1>
@@ -15,7 +22,6 @@
 
     <section id="connection-panel">
       <h2>Connection</h2>
-      <p id="connection-status">Not connected</p>
       <button id="join-btn">Join Room</button>
       <button id="leave-btn" disabled>Leave Room</button>
     </section>
