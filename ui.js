@@ -14,6 +14,7 @@ const el = {
   pauseBtn: () => document.getElementById("pause-btn"),
   prevBtn: () => document.getElementById("prev-btn"),
   nextBtn: () => document.getElementById("next-btn"),
+  reloadBtn: () => document.getElementById("reload-btn"),
   leaveBtn: () => document.getElementById("leave-btn"),
   joinBtn: () => document.getElementById("join-btn"),
   libraryInput: () => document.getElementById("library-input"),
@@ -52,7 +53,7 @@ export function renderReadyStatus({ user1Ready, user2Ready }, mySlot) {
 }
 
 export function setPlaybackControlsEnabled(enabled) {
-  [el.playBtn(), el.pauseBtn(), el.prevBtn(), el.nextBtn()].forEach((btn) => {
+  [el.playBtn(), el.pauseBtn(), el.prevBtn(), el.nextBtn(), el.reloadBtn()].forEach((btn) => {
     btn.disabled = !enabled;
   });
 }
@@ -97,8 +98,12 @@ export function bindPlayerControls(handlers) {
   el.nextBtn().addEventListener("click", () => handlers.next());
 }
 
+export function bindReloadButton(handler) {
+  el.reloadBtn().addEventListener("click", handler);
+}
+
 export function setControlsEnabled(enabled) {
-  [el.playBtn(), el.pauseBtn(), el.prevBtn(), el.nextBtn(), el.readyBtn()].forEach((btn) => {
+  [el.playBtn(), el.pauseBtn(), el.prevBtn(), el.nextBtn(), el.reloadBtn(), el.readyBtn()].forEach((btn) => {
     btn.disabled = !enabled;
   });
 }
