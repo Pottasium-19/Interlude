@@ -50,11 +50,6 @@ export function extractVideoId(input) {
     }
   }
 
-  // OLD (end of file):
-  return candidate && VIDEO_ID_PATTERN.test(candidate) ? candidate : null;
-}
-
-// NEW (append after it):
   return candidate && VIDEO_ID_PATTERN.test(candidate) ? candidate : null;
 }
 
