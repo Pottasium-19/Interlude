@@ -80,3 +80,30 @@ button:disabled {
 #library-list li:last-child {
   border-bottom: none;
 }
+
+/* Notification panel — functional positioning/stacking only; visual
+   styling (the "sky notification" look) comes later. */
+#notification-panel {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.notification {
+  pointer-events: auto;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: #eee;
+  border: 1px solid #ccc;
+}
+
+.notification-success { border-color: #2a2; }
+.notification-info { border-color: #58a; }
+.notification-warning { border-color: #c90; }
+.notification-error { border-color: #a33; }
