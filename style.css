@@ -1,0 +1,339 @@
+/* Intentionally minimal — visuals are not the concern of Phase 1. */
+
+body {
+  font-family: system-ui, sans-serif;
+  max-width: 480px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  color: #222;
+}
+
+h1 {
+  font-size: 1.3rem;
+}
+
+.note {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+section {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+h2 {
+  font-size: 1rem;
+  margin-top: 0;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  margin-right: 0.5rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+#countdown-display {
+  font-size: 2rem;
+  font-weight: bold;
+  text-align: center;
+  min-height: 2.5rem;
+}
+
+#library-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+#library-input {
+  flex: 1;
+  padding: 0.5rem;
+}
+
+#library-message {
+  color: #a33;
+  font-size: 0.85rem;
+  min-height: 1.2rem;
+}
+
+#library-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#library-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+#library-list li:last-child {
+  border-bottom: none;
+}
+
+/* Notification panel — functional positioning/stacking only; visual
+   styling (the "sky notification" look) comes later. */
+#notification-panel {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.notification {
+  pointer-events: auto;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: #eee;
+  border: 1px solid #ccc;
+}
+
+.notification-success { border-color: #2a2; }
+.notification-info { border-color: #58a; }
+.notification-warning { border-color: #c90; }
+.notification-error { border-color: #a33; }
+
+/* ==========================================================================
+   Garden entry screen — landing screen only. Sits on top of the whole
+   page: a soft daytime scene (sky, distant hills, ocean, grassy plain)
+   with the two flower-creatures waiting on the grass. Everything
+   underneath still works exactly as before; it's just visually curtained
+   off until we wire up the "lift the curtain on join" step later.
+   ========================================================================== */
+
+#garden-screen {
+  --sky-top: #bfe6ee;
+  --sky-horizon: #f3f8e6;
+  --cloud: #fffaf0;
+  --hill-far: #c3dfb4;
+  --ocean: #93d3d3;
+  --ocean-deep: #6fbcc0;
+  --grass-far: #9ccb92;
+  --grass-near: #74b56f;
+  --ink: #3c4a3f;
+  --cream: #fffaf0;
+
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto 1fr auto;
+  grid-template-areas:
+    "title title"
+    "subtitle subtitle"
+    "pink lavender"
+    "status status";
+  row-gap: 1rem;
+  column-gap: 1rem;
+  justify-items: center;
+  align-content: space-between;
+  padding: 2.5rem 1.5rem 2rem;
+  text-align: center;
+  overflow: hidden;
+  background: linear-gradient(to bottom, var(--sky-top) 0%, var(--sky-horizon) 44%, var(--ocean) 54%, var(--ocean-deep) 100%);
+  font-family: 'Quicksand', system-ui, sans-serif;
+}
+
+/* fluffy drifting clouds, drawn with layered radial-gradients — no images */
+#garden-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  height: 34%;
+  background-image:
+    radial-gradient(26px 15px at 14% 32%, var(--cloud) 55%, transparent 58%),
+    radial-gradient(18px 11px at 21% 44%, var(--cloud) 55%, transparent 58%),
+    radial-gradient(22px 13px at 80% 20%, var(--cloud) 55%, transparent 58%),
+    radial-gradient(15px 9px at 87% 33%, var(--cloud) 55%, transparent 58%),
+    radial-gradient(16px 10px at 48% 12%, var(--cloud) 50%, transparent 58%);
+  opacity: 0.9;
+  animation: garden-drift 20s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes garden-drift {
+  from { transform: translateX(-3%); }
+  to { transform: translateX(3%); }
+}
+
+/* the scene painted behind the text/flowers: distant hills sitting on
+   the horizon, plus a grassy foreground plain with its own gentle rise */
+.garden-scene {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+}
+
+.garden-scene::before,
+.garden-scene::after {
+  content: "";
+  position: absolute;
+  left: -8%;
+  right: -8%;
+}
+
+.garden-scene::before {
+  top: 33%;
+  height: 15%;
+  background: var(--hill-far);
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  opacity: 0.85;
+}
+
+.garden-scene::after {
+  bottom: -8%;
+  height: 38%;
+  background-image:
+    radial-gradient(1.5px 4px at 8% 8%, var(--ink) 55%, transparent 58%),
+    radial-gradient(1.5px 4px at 12% 6%, var(--ink) 55%, transparent 58%),
+    radial-gradient(1.5px 4px at 27% 10%, var(--ink) 55%, transparent 58%),
+    radial-gradient(1.5px 4px at 31% 7%, var(--ink) 55%, transparent 58%),
+    radial-gradient(1.5px 4px at 68% 9%, var(--ink) 55%, transparent 58%),
+    radial-gradient(1.5px 4px at 72% 6%, var(--ink) 55%, transparent 58%),
+    radial-gradient(1.5px 4px at 89% 10%, var(--ink) 55%, transparent 58%),
+    radial-gradient(1.5px 4px at 93% 7%, var(--ink) 55%, transparent 58%),
+    linear-gradient(to bottom, var(--grass-far) 0%, var(--grass-near) 100%);
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  box-shadow: 0 -3px 14px rgba(60, 74, 63, 0.15);
+}
+
+#garden-title {
+  grid-area: title;
+  font-family: 'Baloo 2', 'Quicksand', system-ui, sans-serif;
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.03em;
+  margin: 0;
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.55);
+  animation: garden-rise 0.8s ease-out both;
+}
+
+#garden-subtitle {
+  grid-area: subtitle;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0;
+  opacity: 0.7;
+  animation: garden-rise 0.8s ease-out 0.15s both;
+}
+
+/* the two flower-creatures */
+.garden-flower {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  align-self: end;
+  padding-bottom: 1rem;
+  transition: transform 0.2s ease;
+  animation: garden-rise 0.8s ease-out 0.3s both, garden-sway 4s ease-in-out infinite;
+}
+
+.garden-flower--pink { grid-area: pink; }
+.garden-flower--lavender { grid-area: lavender; }
+
+.garden-flower:hover,
+.garden-flower:focus-visible {
+  transform: scale(1.08) translateY(-2px);
+}
+
+.garden-flower__graphic {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  position: relative;
+  border: 2.5px solid var(--ink);
+  box-shadow: 0 4px 0 rgba(60, 74, 63, 0.18);
+  background-image:
+    radial-gradient(3px 3px at 37% 48%, var(--ink) 100%, transparent 101%),
+    radial-gradient(3px 3px at 63% 48%, var(--ink) 100%, transparent 101%);
+}
+
+/* two small ears peeking out from behind the head */
+.garden-flower__graphic::before,
+.garden-flower__graphic::after {
+  content: "";
+  position: absolute;
+  top: -0.5rem;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  border: 2.5px solid var(--ink);
+  background-color: inherit;
+  z-index: -1;
+}
+.garden-flower__graphic::before { left: -0.1rem; }
+.garden-flower__graphic::after { right: -0.1rem; }
+
+.garden-flower--pink .garden-flower__graphic { background-color: #f6bfce; }
+.garden-flower--lavender .garden-flower__graphic { background-color: #cabdf2; }
+
+.garden-flower__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.garden-flower--unavailable {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.garden-flower--unavailable:hover {
+  transform: none;
+}
+
+.garden-flower--mine .garden-flower__graphic {
+  box-shadow: 0 0 0 3px var(--cream), 0 0 0 5px var(--ink), 0 4px 0 rgba(60, 74, 63, 0.18);
+}
+.garden-flower--partner .garden-flower__graphic {
+  filter: saturate(0.7);
+}
+
+#connection-status {
+  grid-area: status;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--ink);
+  opacity: 0.85;
+  min-height: 1.2rem;
+  margin: 0;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  animation: garden-rise 0.6s ease-out both;
+}
+
+@keyframes garden-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes garden-sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
