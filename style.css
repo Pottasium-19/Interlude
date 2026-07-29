@@ -132,8 +132,34 @@ button:disabled {
   --ink: #26261f;
   --pink: #e3a8b0;
   --lavender: #b6a8d6;
-  /* position/grid/padding rules below stay as they are */
+  --parchment: #f4ecd8;
+  --gold: #d9a35c;
+
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto 1fr auto;
+  grid-template-areas:
+    "title title"
+    "subtitle subtitle"
+    "pink lavender"
+    "status status";
+  row-gap: 1rem;
+  column-gap: 1rem;
+  justify-items: center;
+  align-content: space-between;
+  padding: 4vh 1.5rem 3vh;
+  text-align: center;
+  overflow: hidden;
+  transition: opacity 0.8s ease;
   background: var(--sky);
+}
+
+#garden-screen.garden-screen--leaving {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* fluffy drifting clouds, drawn with layered radial-gradients — no images */
@@ -146,7 +172,7 @@ button:disabled {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 500'%3E%3Crect width='800' height='500' fill='%23bcdce6'/%3E%3Cpath d='M120,44 q8,-10 16,0 q8,-10 16,0' stroke='%2326261f' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Cpath d='M40,210 C10,210 0,175 22,155 C0,135 12,98 52,92 C42,58 92,34 130,54 C150,20 208,16 234,50 C268,30 318,44 318,88 C352,94 362,138 332,158 C356,182 336,214 298,208 Z' fill='%23f4ecd8' stroke='%2326261f' stroke-width='4' stroke-linejoin='round'/%3E%3Cpath d='M560,150 C540,150 532,124 548,110 C532,96 542,68 572,64 C566,38 604,20 630,38 C652,14 696,16 712,42 C736,28 768,42 764,72 C788,78 794,110 772,124 C788,142 774,164 748,158 Z' fill='%23f4ecd8' stroke='%2326261f' stroke-width='4' stroke-linejoin='round'/%3E%3Cpath d='M0,300 L150,150 L220,190 L280,140 L400,215 L400,320 L0,320 Z' fill='%23c3d6b8' stroke='%2326261f' stroke-width='3' stroke-linejoin='round'/%3E%3Cpath d='M350,320 L520,160 L650,230 L800,185 L800,320 Z' fill='%23c3d6b8' stroke='%2326261f' stroke-width='3' stroke-linejoin='round'/%3E%3Cpath d='M0,300 q20,-16 40,0 q20,-16 40,0 q20,-16 40,0 q20,-16 40,0 q20,-16 40,0 q20,-16 40,0 q20,-16 40,0 q20,-16 40,0 q20,-16 40,0 q20,-16 40,0 L800,335 L0,335 Z' fill='%237d9c6c' stroke='%2326261f' stroke-width='2.5'/%3E%3Cpath d='M0,340 C-10,300 40,290 60,315 C70,275 130,275 140,315 C160,285 210,290 205,325 L0,340 Z' fill='%237d9c6c' stroke='%2326261f' stroke-width='3.5' stroke-linejoin='round'/%3E%3Cpath d='M680,335 C670,295 730,288 745,320 C765,290 800,300 795,330 L680,335 Z' fill='%237d9c6c' stroke='%2326261f' stroke-width='3.5' stroke-linejoin='round'/%3E%3Cpath d='M0,335 q40,-14 80,0 q40,-14 80,0 q40,-14 80,0 q40,-14 80,0 q40,-14 80,0 q40,-14 80,0 q40,-14 80,0 q40,-14 80,0 q40,-14 80,0 q40,-14 80,0 L800,435 L0,435 Z' fill='%23a9d3d6' stroke='%2326261f' stroke-width='3'/%3E%3Cpath d='M300,375 q15,-5 30,0 q15,5 30,0' stroke='%23f4ecd8' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Cpath d='M480,395 q15,-5 30,0 q15,5 30,0 q15,-5 30,0' stroke='%23f4ecd8' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Cpath d='M180,415 q15,-5 30,0 q15,5 30,0' stroke='%23f4ecd8' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Cpath d='M0,420 q20,-14 40,0 q20,-14 40,0 q20,-14 40,0 q20,-14 40,0 q20,-14 40,0 q20,-14 40,0 q20,-14 40,0 q20,-14 40,0 q20,-14 40,0 q20,-14 40,0 L800,500 L0,500 Z' fill='%238fb37e' stroke='%2326261f' stroke-width='3'/%3E%3C/svg%3E");
+  background-image: url("garden-scene.jpg");
   background-repeat: no-repeat;
   background-position: bottom center;
   background-size: cover;
@@ -155,12 +181,12 @@ button:disabled {
 #garden-title {
   grid-area: title;
   font-family: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
-  font-size: 2.6rem;
+  font-size: clamp(3.5rem, 14vw, 8rem);
   font-weight: 600;
   color: var(--ink);
   letter-spacing: 0.02em;
   margin: 0;
-  margin-top: 4vh;
+  line-height: 1;
   text-shadow: 0 1px 3px rgba(244, 236, 216, 0.8);
   animation: garden-rise 1.1s ease-out both;
 }
@@ -175,7 +201,12 @@ button:disabled {
   letter-spacing: 0.02em;
   margin: 0;
   opacity: 0.75;
+  transition: opacity 0.6s ease;
   animation: garden-rise 1.1s ease-out 0.2s both;
+}
+
+#garden-screen.garden-screen--picked #garden-subtitle {
+  opacity: 0;
 }
 
 /* the two flower-creatures */
@@ -188,16 +219,15 @@ button:disabled {
   background: none;
   cursor: pointer;
   padding-bottom: 1rem;
+  position: absolute;
+  bottom: 14%;
   transition: transform 0.4s ease, filter 0.4s ease;
   animation: garden-rise 1.1s ease-out 0.4s both, garden-sway 6s ease-in-out infinite;
 }
 
-.garden-flower {
-  position: absolute;
-  bottom: 14%;
-}
 .garden-flower--pink { left: 32%; }
 .garden-flower--lavender { left: 58%; }
+
 .garden-flower:hover,
 .garden-flower:focus-visible {
   transform: translateY(-3px);
