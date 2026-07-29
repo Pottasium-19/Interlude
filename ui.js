@@ -186,6 +186,11 @@ export function setGardenFlowerRoles(myFlowerId, isJoined) {
   });
 }
 
+export function setGardenFlowerUnavailable(flowerId) {
+  const node = document.getElementById(`garden-flower-${flowerId}`);
+  if (node) node.classList.add("garden-flower--unavailable");
+}
+
 /** Fades "Choose Your Flower" out once this device has claimed a slot. */
 export function markGardenPicked() {
   const mount = el.gardenScreen();
