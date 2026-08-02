@@ -306,3 +306,17 @@ button:disabled {
   50% { transform: translateY(-4px); }
 }
 
+/* ==========================================================================
+   #app — Phase 1: fixed full-bleed viewport sharing the garden backdrop.
+   Controls stay default-styled for now (Phase 2 repositions them); this
+   only stops #app from being a scrollable, blank-white page.
+   ========================================================================== */
+
+#app {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
