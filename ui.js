@@ -67,6 +67,7 @@ export function renderCountdown(text) {
 
 export function renderPlayerState(state) {
   el.playerState().textContent = `State: ${state}`;
+  document.body.classList.toggle("is-playing", state === "playing");
 }
 
 export function renderLastAction(action, by) {
@@ -92,6 +93,7 @@ export function setJoinButtonEnabled(enabled) {
 export function setJoinedState(isJoined) {
   el.leaveBtn().disabled = !isJoined;
   setControlsEnabled(isJoined);
+  document.body.classList.toggle("is-joined", isJoined);
 }
 
 /**
