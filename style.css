@@ -320,3 +320,80 @@ button:disabled {
   box-sizing: border-box;
 }
 
+/* ==========================================================================
+   Phase 2 — control icons. Sizing/imagery/click-targets are final; every
+   top/left/bottom/right value below is a placeholder for Phase 2.1 — swap
+   the numbers per button once real placement is decided, nothing else
+   needs to change.
+   ========================================================================== */
+
+.icon-btn {
+  position: absolute;
+  width: 3.2rem;
+  height: 3.2rem;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  cursor: pointer;
+  font-size: 0;
+  line-height: 0;
+  color: transparent;
+}
+
+#join-btn.icon-btn {
+  top: 5%;
+  left: 6%;
+  background-image: url("Join.png");
+}
+
+#leave-btn.icon-btn {
+  top: 5%;
+  right: 6%;
+  background-image: url("Leave.png");
+}
+
+#ready-btn.icon-btn {
+  width: 3.6rem;
+  height: 3.6rem;
+  bottom: 26%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-image: url("Ready.png");
+}
+
+#prev-btn.icon-btn {
+  bottom: 10%;
+  left: 15%;
+  background-image: url("Previous.png");
+}
+
+#play-btn.icon-btn {
+  bottom: 10%;
+  left: 32%;
+  background-image: url("Play.png");
+}
+
+#pause-btn.icon-btn {
+  bottom: 10%;
+  left: 49%;
+  background-image: url("Pause.png");
+}
+
+#next-btn.icon-btn {
+  bottom: 10%;
+  left: 66%;
+  background-image: url("Next.png");
+}
+
+#reload-btn.icon-btn {
+  width: 2.4rem;
+  height: 2.4rem;
+  bottom: 10%;
+  left: 83%;
+  background-image: url("Reload.png");
+}
+
