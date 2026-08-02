@@ -352,7 +352,7 @@ button:disabled {
 
 #leave-btn.icon-btn {
   top: 5%;
-  right: 6%;
+  left: 6%;
   background-image: url("Leave.png");
 }
 
@@ -379,7 +379,7 @@ button:disabled {
 
 #pause-btn.icon-btn {
   bottom: 10%;
-  left: 49%;
+  left: 32%;
   background-image: url("Pause.png");
 }
 
@@ -395,5 +395,17 @@ button:disabled {
   bottom: 10%;
   left: 83%;
   background-image: url("Reload.png");
+}
+
+/* Swap pairs — only one of each shows at a time, driven by body classes
+   toggled from renderPlayerState() / setJoinedState() in ui.js. */
+body:not(.is-joined) #leave-btn.icon-btn,
+body.is-joined #join-btn.icon-btn {
+  display: none;
+}
+
+body.is-playing #play-btn.icon-btn,
+body:not(.is-playing) #pause-btn.icon-btn {
+  display: none;
 }
 
