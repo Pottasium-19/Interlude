@@ -252,12 +252,12 @@ button:disabled {
 
 .garden-flower--pink .garden-flower__graphic {
   --bloom-color: rgba(227, 168, 176, 0.85);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 140'%3E%3Cpath d='M50,140 L50,70' stroke='%2326261f' stroke-width='3' fill='none'/%3E%3Cpath d='M50,105 C35,100 28,112 32,122 C42,122 50,114 50,105 Z' fill='%237d9c6c' stroke='%2326261f' stroke-width='2.5'/%3E%3Cpath d='M50,115 C65,110 72,122 68,132 C58,132 50,124 50,115 Z' fill='%237d9c6c' stroke='%2326261f' stroke-width='2.5'/%3E%3Cg stroke='%2326261f' stroke-width='2.5' fill='%23e3a8b0'%3E%3Cellipse cx='50' cy='30' rx='16' ry='22'/%3E%3Cellipse cx='50' cy='30' rx='16' ry='22' transform='rotate(72 50 50)'/%3E%3Cellipse cx='50' cy='30' rx='16' ry='22' transform='rotate(144 50 50)'/%3E%3Cellipse cx='50' cy='30' rx='16' ry='22' transform='rotate(216 50 50)'/%3E%3Cellipse cx='50' cy='30' rx='16' ry='22' transform='rotate(288 50 50)'/%3E%3C/g%3E%3Ccircle cx='50' cy='50' r='9' fill='%23e8c477' stroke='%2326261f' stroke-width='2.5'/%3E%3C/svg%3E");
+  background-image: url("Pink.png");
 }
 
 .garden-flower--lavender .garden-flower__graphic {
   --bloom-color: rgba(182, 168, 214, 0.85);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 140'%3E%3Cpath d='M50,140 L50,70' stroke='%2326261f' stroke-width='3' fill='none'/%3E%3Cpath d='M50,105 C35,100 28,112 32,122 C42,122 50,114 50,105 Z' fill='%237d9c6c' stroke='%2326261f' stroke-width='2.5'/%3E%3Cpath d='M50,115 C65,110 72,122 68,132 C58,132 50,124 50,115 Z' fill='%237d9c6c' stroke='%2326261f' stroke-width='2.5'/%3E%3Cg stroke='%2326261f' stroke-width='2.5' fill='%23b6a8d6'%3E%3Cellipse cx='50' cy='30' rx='16' ry='22'/%3E%3Cellipse cx='50' cy='30' rx='16' ry='22' transform='rotate(72 50 50)'/%3E%3Cellipse cx='50' cy='30' rx='16' ry='22' transform='rotate(144 50 50)'/%3E%3Cellipse cx='50' cy='30' rx='16' ry='22' transform='rotate(216 50 50)'/%3E%3Cellipse cx='50' cy='30' rx='16' ry='22' transform='rotate(288 50 50)'/%3E%3C/g%3E%3Ccircle cx='50' cy='50' r='9' fill='%23e8c477' stroke='%2326261f' stroke-width='2.5'/%3E%3C/svg%3E");
+  background-image: url("Lavender.png");
 }
 
 .garden-flower__label {
