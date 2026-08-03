@@ -409,3 +409,74 @@ body:not(.is-playing) #pause-btn.icon-btn {
   display: none;
 }
 
+/* Phase 2 extension — status text and heading positions (placeholders for manual tuning) */
+
+#connection-status {
+  position: absolute;
+  top: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#ready-status {
+  position: absolute;
+  bottom: 40%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#countdown-display {
+  position: absolute;
+  bottom: 33%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#player-state {
+  position: absolute;
+  bottom: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#last-action {
+  position: absolute;
+  bottom: 17%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#queue-count {
+  position: absolute;
+  bottom: 14%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#connection-panel h2 {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#ready-panel h2 {
+  position: absolute;
+  bottom: 44%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#countdown-panel h2 {
+  position: absolute;
+  bottom: 37%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#player-panel h2 {
+  position: absolute;
+  bottom: 24%;
+  left: 50%;
+  transform: translateX(-50%);
+}
