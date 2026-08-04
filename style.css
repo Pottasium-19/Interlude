@@ -680,6 +680,46 @@ body:not(.is-playing) #pause-btn.icon-btn {
   transform: translateX(0);
 }
 
+/* --- Zoom/slide toward the library panel (point 4). Same class flip
+   that opens #library-panel in toggleLibraryPanel() (ui.js) drives
+   this — garden-flower--panel-open is added to the flower node in
+   the same call that adds library-panel--open to the panel, so both
+   start moving on the same tick.
+
+   animation: none turns off garden-sway here: keyframe animations
+   always win over a plain transform rule on the same property, so
+   without this the sway's rotate() would fight our scale/translate
+   every frame instead of holding still while zoomed.
+
+   translateX distances are per-flower (pink and lavender start at
+   different `left` offsets) and are placeholders — nudge once the
+   panel's real edge position is dialed in. transition duration/easing
+   match #library-panel's (0.5s ease) so the two motions read as one. */
+.garden-flower--panel-open {
+  animation: none;
+  transition: transform 0.5s ease, filter 0.4s ease;
+  z-index: 60;
+}
+
+.garden-flower--pink.garden-flower--panel-open {
+  transform: translateX(38vw) scale(1.15);
+}
+
+.garden-flower--lavender.garden-flower--panel-open {
+  transform: translateX(53vw) scale(1.15);
+}
+
+.garden-flower--panel-open:hover,
+.garden-flower--panel-open:focus-visible {
+  transform: translateX(38vw) scale(1.15);
+  filter: brightness(1.1);
+}
+
+.garden-flower--lavender.garden-flower--panel-open:hover,
+.garden-flower--lavender.garden-flower--panel-open:focus-visible {
+  transform: translateX(53vw) scale(1.15);
+}
+
 @media (max-width: 600px) {
   #app h1 {
     font-size: clamp(2rem, 9vw, 3rem);
