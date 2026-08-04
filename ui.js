@@ -203,6 +203,22 @@ export function toggleLibraryPanel(flowerId) {
 }
 
 /**
+ * Force-closes the library panel regardless of which flower has it
+ * open, and clears the tracked state. Call on leave/room-reset — the
+ * join/lavender-role reset in setGardenFlowerRoles(null, false)
+ * doesn't touch garden-flower--panel-open or library-panel--open, so
+ * without this a panel left open on leave stays visually open (and
+ * openLibraryFlowerId stays stale) for the next join.
+ */
+export function closeLibraryPanel() {
+  if (openLibraryFlowerId) {
+    document.getElementById(`garden-flower-${openLibraryFlowerId}`)
+      ?.classList.remove("garden-flower--panel-open");
+  }
+  openLibraryFlowerId = null;
+  el.libraryPanel()?.classList.remove("library-panel--open");
+}
+/**
  * Call after joinRoom() resolves (and on leave/room-reset) to mark
  * which garden flower is mine (editable) vs the partner's
  * (view-only). Both stay visible either way — only state classes
