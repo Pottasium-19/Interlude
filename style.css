@@ -488,7 +488,8 @@ body:not(.is-playing) #pause-btn.icon-btn {
    ========================================================================== */
 
 /* --- Flowers (garden entry screen) --- */
-.garden-flower__graphic {
+.garden-flower--pink .garden-flower__graphic,
+.garden-flower--lavender .garden-flower__graphic {
   width: 5.6rem;
   height: 3.7rem;
 }
@@ -512,6 +513,12 @@ body:not(.is-playing) #pause-btn.icon-btn {
   transform: translateX(-50%);
   text-align: center;
   margin: 0;
+  font-family: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+  font-size: clamp(2.5rem, 10vw, 4.5rem);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  text-shadow: 0 1px 3px rgba(244, 236, 216, 0.8);
 }
 
 #app .note {
@@ -535,63 +542,66 @@ body:not(.is-playing) #pause-btn.icon-btn {
 /* --- Join / Leave, top left --- */
 #join-btn.icon-btn,
 #leave-btn.icon-btn {
-  top: -1%;
-  left: 0%;
-  width: 1.2rem;
-  height: 2.2rem;
+  top: 3%;
+  left: 3%;
+  width: 2.8rem;
+  height: 2.8rem;
 }
 
 /* --- Ready button, top right --- */
 #ready-btn.icon-btn {
-  bottom: 90%;
-  left: 92%;
+  top: 3%;
+  right: 3%;
   width: 9.6rem;
-  height: 1.6rem;
+  height: 2.8rem;
 }
 
 /* --- Play / Pause / Next / Previous cluster --- */
+#prev-btn.icon-btn {
+  bottom: 65%;
+  left: 15%;
+  opacity: 1;
+}
+
 #play-btn.icon-btn,
 #pause-btn.icon-btn {
   bottom: 65%;
-  left: 45%;
+  left: 38%;
   opacity: 1;
 }
 
 #next-btn.icon-btn {
   bottom: 65%;
-  left: 57%;
-  opacity: 1;
-}
-
-#prev-btn.icon-btn {
-  bottom: 65%;
-  left: 30%;
+  left: 61%;
   opacity: 1;
 }
 
 /* --- Reload --- */
 #reload-btn.icon-btn {
   bottom: 65%;
-  left: 69%;
-  width: 1.6rem;
-  height: 2.6rem;
+  left: 84%;
+  width: 3.2rem;
+  height: 3.2rem;
+  opacity: 1;
 }
 
 /* --- Bottom-left status stack --- */
 #connection-status,
 #ready-status,
-#queue-count,
+#queue-line,
 #player-state,
 #last-action {
   position: absolute;
   left: 3%;
-  white-space: nowrap;
+  max-width: 55%;
+  font-size: 0.75rem;
+  white-space: normal;
   margin: 0;
 }
 
 #connection-status { bottom: 26%; }
 #ready-status { bottom: 21%; }
-#queue-count { bottom: 16%; }
+#queue-line { bottom: 16%; }
 #player-state { bottom: 11%; }
 #last-action { bottom: 6%; }
 
