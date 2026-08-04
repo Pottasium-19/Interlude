@@ -480,3 +480,129 @@ body:not(.is-playing) #pause-btn.icon-btn {
   left: 50%;
   transform: translateX(-50%);
 }
+
+
+/* ==========================================================================
+   Final layout pass — appended last on purpose, so it overrides any
+   earlier position values for the same elements above in this file.
+   ========================================================================== */
+
+/* --- Flowers (garden entry screen) --- */
+.garden-flower__graphic {
+  width: 5.6rem;
+  height: 3.7rem;
+}
+
+.garden-flower--pink { left: 42%; bottom: 7%; }
+.garden-flower--lavender { left: 27%; bottom: 7%; }
+
+/* --- Section headings — all hidden --- */
+#connection-panel h2,
+#ready-panel h2,
+#countdown-panel h2,
+#player-panel h2 {
+  display: none;
+}
+
+/* --- Title & subtitle, top center --- */
+#app h1 {
+  position: absolute;
+  top: 3%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  margin: 0;
+}
+
+#app .note {
+  position: absolute;
+  top: 9%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* --- Notifications, just below title --- */
+#notification-panel {
+  position: absolute;
+  top: 14%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* --- Join / Leave, top left --- */
+#join-btn.icon-btn,
+#leave-btn.icon-btn {
+  top: -1%;
+  left: 0%;
+  width: 1.2rem;
+  height: 2.2rem;
+}
+
+/* --- Ready button, top right --- */
+#ready-btn.icon-btn {
+  bottom: 90%;
+  left: 92%;
+  width: 9.6rem;
+  height: 1.6rem;
+}
+
+/* --- Play / Pause / Next / Previous cluster --- */
+#play-btn.icon-btn,
+#pause-btn.icon-btn {
+  bottom: 65%;
+  left: 45%;
+  opacity: 1;
+}
+
+#next-btn.icon-btn {
+  bottom: 65%;
+  left: 57%;
+  opacity: 1;
+}
+
+#prev-btn.icon-btn {
+  bottom: 65%;
+  left: 30%;
+  opacity: 1;
+}
+
+/* --- Reload --- */
+#reload-btn.icon-btn {
+  bottom: 65%;
+  left: 69%;
+  width: 1.6rem;
+  height: 2.6rem;
+}
+
+/* --- Bottom-left status stack --- */
+#connection-status,
+#ready-status,
+#queue-count,
+#player-state,
+#last-action {
+  position: absolute;
+  left: 3%;
+  white-space: nowrap;
+  margin: 0;
+}
+
+#connection-status { bottom: 26%; }
+#ready-status { bottom: 21%; }
+#queue-count { bottom: 16%; }
+#player-state { bottom: 11%; }
+#last-action { bottom: 6%; }
+
+/* --- Countdown, bottom right, only visible while counting down --- */
+#countdown-display {
+  position: absolute;
+  bottom: 6%;
+  right: 3%;
+  margin: 0;
+}
+
+#countdown-display:empty {
+  display: none;
+}
