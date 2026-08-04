@@ -640,3 +640,16 @@ body:not(.is-playing) #pause-btn.icon-btn {
 #flower-panel {
   display: none;
 }
+
+@media (max-width: 600px) {
+  #app h1 {
+    font-size: clamp(2rem, 9vw, 3rem);
+    max-width: 60%;
+  }
+
+  #ready-btn.icon-btn {
+    width: 7rem;
+    top: 9%;
+    right: 4%;
+  }
+}
