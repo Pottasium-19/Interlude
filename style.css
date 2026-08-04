@@ -162,6 +162,13 @@ button:disabled {
   pointer-events: none;
 }
 
+#flower-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  pointer-events: none;
+}
+
 /* fluffy drifting clouds, drawn with layered radial-gradients — no images */
 
 
@@ -218,6 +225,7 @@ button:disabled {
   border: none;
   background: none;
   cursor: pointer;
+  pointer-events: auto;
   padding-bottom: 1rem;
   position: absolute;
   transform-origin: bottom center;
