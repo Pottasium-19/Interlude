@@ -491,7 +491,7 @@ body:not(.is-playing) #pause-btn.icon-btn {
 .garden-flower--pink .garden-flower__graphic,
 .garden-flower--lavender .garden-flower__graphic {
   width: 5.6rem;
-  height: 3.7rem;
+  height: 8rem;
 }
 
 .garden-flower--pink { left: 42%; bottom: 7%; }
@@ -552,6 +552,8 @@ body:not(.is-playing) #pause-btn.icon-btn {
 #ready-btn.icon-btn {
   top: 3%;
   right: 3%;
+  left: auto;
+  transform: none;
   width: 9.6rem;
   height: 2.8rem;
 }
@@ -593,9 +595,11 @@ body:not(.is-playing) #pause-btn.icon-btn {
 #last-action {
   position: absolute;
   left: 3%;
-  max-width: 55%;
-  font-size: 0.75rem;
-  white-space: normal;
+  max-width: 92%;
+  font-size: 0.65rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   margin: 0;
 }
 
