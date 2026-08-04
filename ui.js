@@ -140,26 +140,64 @@ function buildGardenFlowerNode(flowerId, label) {
 }
 
 /**
- * Clicking either flower triggers the existing joinRoom() flow — no
- * separate Join Room screen. Which flower was clicked doesn't matter
- * (assignment is by room slot, not by click target), so both nodes
- * get the same handler. Enter/Space mirrors click for the
- * role="button" nodes above.
+ * Pre-join, clicking either flower triggers onJoin(flowerId) — the
+ * existing joinRoom() flow. Which flower was clicked doesn't matter
+ * pre-join (assignment is by room slot, not by click target).
+ *
+ * Post-join (body.is-joined, set by setJoinedState), a click instead
+ * calls onToggleLibrary(flowerId) — but only for the flower carrying
+ * garden-flower--mine (set by setGardenFlowerRoles). The partner's
+ * flower (garden-flower--partner) is not clickable this way; its
+ * click is swallowed.
+ *
+ * Enter/Space mirrors click for the role="button" nodes above.
  */
-export function bindFlowerSelect(handler) {
+export function bindFlowerSelect(onJoin, onToggleLibrary) {
   [
     [el.gardenFlowerPink(), "pink"],
     [el.gardenFlowerLavender(), "lavender"]
   ].forEach(([node, flowerId]) => {
     if (!node) return;
-    node.addEventListener("click", () => handler(flowerId));
+    const activate = () => {
+      if (document.body.classList.contains("is-joined")) {
+        if (node.classList.contains("garden-flower--mine")) {
+          onToggleLibrary(flowerId);
+        }
+        return;
+      }
+      onJoin(flowerId);
+    };
+    node.addEventListener("click", activate);
     node.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        handler(flowerId);
+        activate();
       }
     });
   });
+}
+
+let openLibraryFlowerId = null;
+
+/**
+ * Toggles the library-open state for `flowerId`'s own flower — only
+ * one flower's panel can be open at a time, so opening one closes
+ * the other. For now this just flips garden-flower--panel-open on
+ * the flower node; #library-panel itself is still under the
+ * display:none rule (point 3) and there's no slide/zoom CSS for the
+ * class yet (point 4) — those hook into this class next.
+ */
+export function toggleLibraryPanel(flowerId) {
+  const node = document.getElementById(`garden-flower-${flowerId}`);
+  if (!node) return;
+
+  const opening = openLibraryFlowerId !== flowerId;
+  if (openLibraryFlowerId) {
+    document.getElementById(`garden-flower-${openLibraryFlowerId}`)
+      ?.classList.remove("garden-flower--panel-open");
+  }
+  openLibraryFlowerId = opening ? flowerId : null;
+  if (opening) node.classList.add("garden-flower--panel-open");
 }
 
 /**
