@@ -47,6 +47,7 @@ import {
   bindJoinButton,
   bindFlowerSelect,
   toggleLibraryPanel,
+  closeLibraryPanel,
   setControlsEnabled,
   setJoinedState,
   setJoinButtonEnabled,
@@ -681,6 +682,7 @@ async function handleLeaveRoom() {
   renderCountdown("");
   setJoinedState(false);
   setGardenFlowerRoles(null, false);
+  closeLibraryPanel();
   setJoinButtonEnabled(true);
 }
 
