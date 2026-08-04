@@ -644,9 +644,40 @@ body:not(.is-playing) #pause-btn.icon-btn {
 }
 
 #youtube-player,
-#library-panel,
 #flower-panel {
   display: none;
+}
+
+/* --- Library panel — slides in from the right edge. Open/closed
+   state is the library-panel--open class, toggled by ui.js's
+   toggleLibraryPanel() in the same call that sets
+   garden-flower--panel-open on the owning flower (point 4 wires the
+   flower's zoom to this same moment, so they read as one motion).
+   No z-index tug-of-war needed against #flower-layer: #app
+   (position:fixed) forms its own stacking context that already
+   paints below #flower-layer's z-index:150, so the flower art stays
+   in front of the panel as it zooms toward the edge. */
+#library-panel {
+  display: block;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(22rem, 86vw);
+  z-index: 50;
+  box-sizing: border-box;
+  padding: 4rem 1.5rem 1.5rem;
+  overflow-y: auto;
+  background: var(--parchment, #f4ecd8);
+  box-shadow: -4px 0 18px rgba(20, 14, 10, 0.25);
+  color: var(--ink, #26261f);
+  transform: translateX(100%);
+  transition: transform 0.5s ease;
+  pointer-events: auto;
+}
+
+#library-panel.library-panel--open {
+  transform: translateX(0);
 }
 
 @media (max-width: 600px) {
