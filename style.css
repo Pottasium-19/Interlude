@@ -427,9 +427,11 @@ body:not(.is-playing) #pause-btn.icon-btn {
 
 #countdown-display {
   position: absolute;
-  bottom: 33%;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 6%;
+  right: 3%;
+  left: auto;
+  transform: none;
+  margin: 0;
 }
 
 #player-state {
@@ -447,10 +449,8 @@ body:not(.is-playing) #pause-btn.icon-btn {
 }
 
 #queue-count {
-  position: absolute;
-  bottom: 14%;
-  left: 50%;
-  transform: translateX(-50%);
+  /* superseded — the whole "Songs in shared queue" line is now
+     positioned as one unit above, no separate rule needed here */
 }
 
 #connection-panel h2 {
@@ -589,12 +589,15 @@ body:not(.is-playing) #pause-btn.icon-btn {
 
 /* --- Bottom-left status stack --- */
 #connection-status,
+#connection-status,
 #ready-status,
-#queue-line,
+#player-panel p:has(#queue-count),
 #player-state,
 #last-action {
   position: absolute;
   left: 3%;
+  right: auto;
+  transform: none;
   max-width: 92%;
   font-size: clamp(0.5rem, 3vw, 0.7rem);
   white-space: nowrap;
@@ -605,7 +608,7 @@ body:not(.is-playing) #pause-btn.icon-btn {
 
 #connection-status { bottom: 26%; }
 #ready-status { bottom: 21%; }
-#queue-line { bottom: 16%; }
+#player-panel p:has(#queue-count) { bottom: 16%; }
 #player-state { bottom: 11%; }
 #last-action { bottom: 6%; }
 
