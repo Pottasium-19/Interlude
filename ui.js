@@ -31,6 +31,7 @@ const el = {
   gardenScreen: () => document.getElementById("garden-screen"),
   gardenFlowerPink: () => document.getElementById("garden-flower-pink"),
   gardenFlowerLavender: () => document.getElementById("garden-flower-lavender"),
+  flowerLayer: () => document.getElementById("flower-layer"),
 };
 
 const LAYER_LIST_EL = { outer: el.outerList, middle: el.middleList, inner: el.innerList };
@@ -109,7 +110,7 @@ export function setJoinedState(isJoined) {
  * pass can target it without another ui.js change.
  */
 export function renderGardenEntry() {
-  const mount = el.gardenScreen();
+  const mount = el.flowerLayer();
   if (!mount || mount.dataset.built === "true") return;
 
   mount.appendChild(buildGardenFlowerNode("pink", "Pink"));
