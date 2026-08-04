@@ -620,3 +620,20 @@ body:not(.is-playing) #pause-btn.icon-btn {
 #countdown-display:empty {
   display: none;
 }
+
+#ready-btn.icon-btn {
+  position: absolute;
+  top: 3%;
+  right: 14%;
+  left: auto;
+  bottom: auto;
+  transform: none;
+  width: 9.6rem;
+  height: 2.8rem;
+}
+
+#youtube-player,
+#library-panel,
+#flower-panel {
+  display: none;
+}
