@@ -21,6 +21,7 @@ const el = {
   libraryAddBtn: () => document.getElementById("library-add-btn"),
   libraryList: () => document.getElementById("library-list"),
   libraryMessage: () => document.getElementById("library-message"),
+  libraryPanel: () => document.getElementById("library-panel"),
   outerList: () => document.getElementById("outer-list"),
   middleList: () => document.getElementById("middle-list"),
   innerList: () => document.getElementById("inner-list"),
@@ -198,6 +199,7 @@ export function toggleLibraryPanel(flowerId) {
   }
   openLibraryFlowerId = opening ? flowerId : null;
   if (opening) node.classList.add("garden-flower--panel-open");
+  el.libraryPanel()?.classList.toggle("library-panel--open", opening);
 }
 
 /**
