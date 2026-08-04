@@ -720,6 +720,99 @@ body:not(.is-playing) #pause-btn.icon-btn {
   transform: translateX(53vw) scale(1.15);
 }
 
+/* --- Point 6: visual container for the reused library content.
+   #library-form/#library-input/#library-list/#library-message keep
+   their existing ids and DOM structure — renderLibrary() in ui.js is
+   untouched — this only restyles them to match the garden theme,
+   scoped to #library-panel so it can't leak onto anything else. --- */
+#library-panel h2 {
+  margin: 0 0 1rem;
+  font-family: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--ink, #26261f);
+}
+
+#library-panel #library-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+#library-panel #library-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--gold, #d9a35c);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.5);
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 0.9rem;
+  color: var(--ink, #26261f);
+}
+
+#library-panel #library-add-btn {
+  padding: 0.5rem 0.9rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--gold, #d9a35c);
+  color: var(--parchment, #f4ecd8);
+  font-family: 'EB Garamond', Georgia, serif;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+#library-panel #library-message {
+  min-height: 1.1rem;
+  margin: 0 0 0.5rem;
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: #a33;
+}
+
+#library-panel #library-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#library-panel #library-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(217, 163, 92, 0.3);
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 0.85rem;
+  color: var(--ink, #26261f);
+}
+
+#library-panel #library-list li:last-child {
+  border-bottom: none;
+}
+
+#library-panel #library-list li span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+#library-panel #library-list select,
+#library-panel #library-list button {
+  flex-shrink: 0;
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--gold, #d9a35c);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--ink, #26261f);
+  cursor: pointer;
+}
+
+
 @media (max-width: 600px) {
   #app h1 {
     font-size: clamp(2rem, 9vw, 3rem);
