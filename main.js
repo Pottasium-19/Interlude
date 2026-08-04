@@ -46,6 +46,7 @@ import {
   bindLeaveButton,
   bindJoinButton,
   bindFlowerSelect,
+  toggleLibraryPanel,
   setControlsEnabled,
   setJoinedState,
   setJoinButtonEnabled,
@@ -169,7 +170,7 @@ function init() {
   playerReadyPromise = initPlayer("youtube-player");
   setCallbacks({ onEnd: handleAutoNext, onError: handleAutoNext });
   bindJoinButton(joinRoom);
-  bindFlowerSelect(joinRoom); // clicking a flower claims that specific slot — Pink → user1, Lavender → user2; SLOT_TAKEN if already claimed
+  bindFlowerSelect(joinRoom, toggleLibraryPanel); // pre-join: claims a slot (Pink → user1, Lavender → user2, SLOT_TAKEN if already claimed). Post-join: toggles the library panel for your own flower only.
   bindLeaveButton(handleLeaveRoom);
   bindReadyButton(async () => {
     await setReady(mySlot, !myCurrentlyReady);
