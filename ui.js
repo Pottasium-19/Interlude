@@ -504,16 +504,19 @@ export function renderQueueCount(count) {
 
 /**
  * Applies a time-of-day period ("dawn" | "day" | "sunset" | "night", as
- * returned by environmentState.js's getTimePeriod) to <body> as one of two
- * classes, is-night / is-day, which drive the night-art crossfade plus the
- * firefly/butterfly layer visibility in style.css. Per the owner's call,
- * dawn reads visually as day and sunset reads visually as night, since we
- * only have day + night art right now.
+ * returned by environmentState.js's getTimePeriod) to <body> as classes:
+ * is-night / is-day, which drive the night-art crossfade plus the
+ * firefly/butterfly layer visibility in style.css, and is-dawn (Phase 5),
+ * which independently gates the dawn-fog layer only. Per the owner's call,
+ * dawn still reads visually as day (is-day stays true) and sunset still
+ * reads visually as night, since we only have day + night art right now —
+ * is-dawn is additive, not a replacement for that pairing.
  */
 export function setTimeOfDay(period) {
   const isNight = period === "night" || period === "sunset";
   document.body.classList.toggle("is-night", isNight);
   document.body.classList.toggle("is-day", !isNight);
+  document.body.classList.toggle("is-dawn", period === "dawn");
 }
 
 /** Tiny deterministic hash — same shape as environmentState.js's private
