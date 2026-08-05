@@ -486,6 +486,53 @@ body.is-dawn #dawn-fog-layer {
   100% { transform: translateX(0); }
 }
 
+/* --- Morning light rays: large, soft, warm diagonal beams drifting
+   slowly across the scene during dawn. Reuses body.is-dawn (Part 5)
+   rather than a new "morning" class, per the reading noted above — same
+   gating point as the fog layer. A repeating diagonal gradient masked to
+   a soft radial falloff from one corner (a generic light-source origin,
+   not tied to any artwork coordinate), panned gently via transform.
+   No image assets. */
+#light-rays-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 57;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 3s ease;
+}
+
+body.is-dawn #light-rays-layer {
+  opacity: 1;
+}
+
+#light-rays-layer::before {
+  content: "";
+  position: absolute;
+  top: -30%;
+  left: -30%;
+  width: 160%;
+  height: 160%;
+  background-image: repeating-linear-gradient(
+    115deg,
+    rgba(255, 244, 214, 0.16) 0px,
+    rgba(255, 244, 214, 0.16) 40px,
+    rgba(255, 244, 214, 0) 40px,
+    rgba(255, 244, 214, 0) 140px
+  );
+  mask-image: radial-gradient(ellipse 70% 60% at 25% 15%, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0) 75%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 25% 15%, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0) 75%);
+  animation: light-rays-drift 50s linear infinite;
+  will-change: transform;
+}
+
+@keyframes light-rays-drift {
+  0%   { transform: translate(0, 0); }
+  50%  { transform: translate(3%, 2%); }
+  100% { transform: translate(0, 0); }
+}
+
 /* fluffy drifting clouds, drawn with layered radial-gradients — no images */
 
 /* the scene painted behind the text/flowers: distant hills sitting on
