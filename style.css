@@ -614,11 +614,14 @@ body:not(.is-playing) #pause-btn.icon-btn {
   margin: 0;
 }
 
-#connection-status { bottom: 26%; }
-#ready-status { bottom: 21%; }
-#player-panel p:has(#queue-count) { bottom: 16%; }
-#player-state { bottom: 11%; }
-#last-action { bottom: 6%; }
+/* Moved up out of the flower's footprint (flower spans roughly
+   bottom:0%-28%) into the clear gap below the icon row
+   (bottom:65%, ~6% tall) — same left-aligned stack, just higher. */
+#connection-status { bottom: 58%; }
+#ready-status { bottom: 53%; }
+#player-panel p:has(#queue-count) { bottom: 48%; }
+#player-state { bottom: 43%; }
+#last-action { bottom: 38%; }
 
 /* --- Countdown, bottom right, only visible while counting down --- */
 #countdown-display {
@@ -643,8 +646,7 @@ body:not(.is-playing) #pause-btn.icon-btn {
   height: 2.8rem;
 }
 
-#youtube-player,
-#flower-panel {
+#youtube-player {
   display: none;
 }
 
@@ -718,6 +720,33 @@ body:not(.is-playing) #pause-btn.icon-btn {
 .garden-flower--lavender.garden-flower--panel-open:hover,
 .garden-flower--lavender.garden-flower--panel-open:focus-visible {
   transform: translateX(53vw) scale(1.15);
+}
+
+
+#library-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1.25rem;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--gold, #d9a35c);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--ink, #26261f);
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+#library-close-btn:hover,
+#library-close-btn:focus-visible {
+  background: var(--gold, #d9a35c);
+  color: var(--parchment, #f4ecd8);
 }
 
 /* --- Point 6: visual container for the reused library content.
@@ -812,6 +841,70 @@ body:not(.is-playing) #pause-btn.icon-btn {
   cursor: pointer;
 }
 
+/* --- Petals, nested inside #library-panel so they render directly
+   below the add/list content, in the same scroll region. Markup/ids
+   unchanged — renderFlower() in ui.js is untouched, styling only. */
+#library-panel #flower-panel {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(217, 163, 92, 0.4);
+}
+
+#library-panel #flower-panel h2 {
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+
+#library-panel #flower-panel h3 {
+  margin: 0.9rem 0 0.4rem;
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-style: italic;
+  color: var(--ink, #26261f);
+  opacity: 0.8;
+}
+
+#library-panel #flower-panel ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#library-panel #flower-panel li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid rgba(217, 163, 92, 0.25);
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 0.8rem;
+  color: var(--ink, #26261f);
+}
+
+#library-panel #flower-panel li:last-child {
+  border-bottom: none;
+}
+
+#library-panel #flower-panel li span {
+  flex: 1 1 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+#library-panel #flower-panel li select,
+#library-panel #flower-panel li button {
+  flex-shrink: 0;
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 0.72rem;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid var(--gold, #d9a35c);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--ink, #26261f);
+  cursor: pointer;
+}
 
 @media (max-width: 600px) {
   #app h1 {
