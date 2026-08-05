@@ -8,8 +8,8 @@
 
 import { acquireRareEvent, releaseRareEvent } from "./ambientEvents.js";
 
-const CHECK_INTERVAL_MS = 25 * 1000;
-const SPAWN_CHANCE = 0.12; // rolled every check, only at night, only if the lock is free — tuned to feel "extremely rare" (~10 min average gap)
+const CHECK_INTERVAL_MS = 20 * 1000;
+const SPAWN_CHANCE = 0.25; // rolled every check, only at night, only if the lock is free — tuned to feel "extremely rare" (~10 min average gap)
 const STREAK_DURATION_MS = 1000;
 
 function isNight() {
