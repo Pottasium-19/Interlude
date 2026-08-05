@@ -399,6 +399,42 @@ body.is-day #butterfly-layer { opacity: 1; }
   100% { opacity: 0; transform: translate(-50%, -50%) translateY(-10px) scale(0.4); }
 }
 
+/* --- Shooting stars: an extremely rare, ~1s silent streak across the
+   night sky. Spawned one at a time by shootingStars.js, positioned in
+   viewport vw/vh (not tied to any fixed artwork coordinate), rotated to
+   match its own travel vector so the tail trails behind the direction of
+   motion. Self-removed from the DOM by JS once the animation finishes. */
+#shooting-star-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 58;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.shooting-star {
+  position: absolute;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.85) 70%, #fff 100%);
+  box-shadow: 0 0 6px 1px rgba(255, 255, 255, 0.55);
+  transform-origin: right center;
+  /* translate outermost so it moves along true screen axes; rotate
+     innermost so it only reorients the streak in place around its head
+     (the "right center" origin) before that motion is applied. */
+  transform: translate(0, 0) rotate(var(--angle, 35deg));
+  animation: shooting-star-streak 1s ease-out forwards;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+@keyframes shooting-star-streak {
+  0%   { opacity: 0;    transform: translate(0, 0) rotate(var(--angle, 35deg)); }
+  10%  { opacity: 1; }
+  70%  { opacity: 0.85; }
+  100% { opacity: 0;    transform: translate(var(--tx, 26vw), var(--ty, 16vh)) rotate(var(--angle, 35deg)); }
+}
+
 /* fluffy drifting clouds, drawn with layered radial-gradients — no images */
 
 
