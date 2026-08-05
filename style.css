@@ -533,6 +533,153 @@ body.is-dawn #light-rays-layer {
   100% { transform: translate(0, 0); }
 }
 
+/* --- Magical visitor (Phase 5, signature feature): a rare glowing
+   butterfly (day) or firefly (night) that travels between the two
+   identity flowers along a handcrafted, runtime-computed path built by
+   magicalVisitor.js. Sits above #flower-layer (z-index 150) so it's
+   never clipped by it. Gated entirely by JS (acquireRareEvent), not by
+   time-of-day body classes — magicalVisitor.js checks is-day/is-night
+   itself before spawning. */
+#magical-visitor-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 155;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.magical-visitor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  transition: opacity 1.8s ease;
+  pointer-events: none;
+  will-change: offset-distance, opacity, transform;
+}
+
+.magical-visitor--visible { opacity: 1; }
+
+/* Soft breathing glow, layered on top of whichever travel/arrival
+   animation is currently running via the JS-composed `animation` list. */
+@keyframes magical-visitor-pulse {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 4px var(--visitor-color, #fff)); }
+  50%      { filter: brightness(1.25) drop-shadow(0 0 9px var(--visitor-color, #fff)); }
+}
+
+/* Travels the JS-built offset-path. Two plateaus give the "brief
+   pauses" the choreography calls for, independent of which handcrafted
+   template shaped the path itself. */
+@keyframes magical-visitor-fly {
+  0%   { offset-distance: 0%; }
+  30%  { offset-distance: 32%; }
+  34%  { offset-distance: 32%; }
+  62%  { offset-distance: 64%; }
+  66%  { offset-distance: 64%; }
+  100% { offset-distance: 100%; }
+}
+
+/* One small loop around the arrival point ("circle it once"). */
+@keyframes magical-visitor-circle {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(10px, -8px); }
+  50%  { transform: translate(0, -14px); }
+  75%  { transform: translate(-10px, -8px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* Day skin: distinct from the regular .butterfly elements via curated
+   color + soft glow + breathing pulse (regular butterflies have
+   neither). Reuses the existing butterfly-flap keyframe rather than
+   duplicating it. */
+.magical-visitor--butterfly {
+  width: 16px;
+  height: 13px;
+}
+
+.magical-visitor--butterfly::before,
+.magical-visitor--butterfly::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 13px;
+  background: var(--visitor-color, #f2c14e);
+  border-radius: 60% 40% 60% 40%;
+  box-shadow: 0 0 8px 2px var(--visitor-color, #f2c14e);
+  animation: butterfly-flap 0.6s ease-in-out infinite alternate;
+}
+
+.magical-visitor--butterfly::before { left: 0; transform-origin: right center; }
+.magical-visitor--butterfly::after  { right: 0; transform-origin: left center; animation-delay: -0.3s; }
+
+/* Night skin: a single dot, softer and slower than regular .firefly —
+   bigger blur radius, no hard blink, just the shared slow pulse above. */
+.magical-visitor--firefly {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--visitor-color, #f5f7ff) 0%, transparent 75%);
+  box-shadow:
+    0 0 10px 3px var(--visitor-color, #f5f7ff),
+    0 0 22px 10px var(--visitor-color, #f5f7ff);
+}
+
+/* Faint pixie-dust trail, day variant only — spawned by magicalVisitor.js
+   at the visitor's live position, same spawn/self-remove shape as
+   .pollen-trail-dot. */
+.pixie-dust-mote {
+  position: fixed;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--visitor-color, #fff6df);
+  box-shadow: 0 0 5px 2px var(--visitor-color, #fff6df);
+  transform: translate(-50%, -50%);
+  animation: pixie-dust-disperse 2s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes pixie-dust-disperse {
+  0%   { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) translateY(8px) scale(0.3); }
+}
+
+/* The tiny glowing particle left behind on the destination flower after
+   the visitor fades, per the arrival choreography. */
+.magical-visitor-particle {
+  position: fixed;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--visitor-color, #fff6df);
+  box-shadow: 0 0 8px 3px var(--visitor-color, #fff6df);
+  transform: translate(-50%, -50%);
+  animation: magical-visitor-particle-fade 4.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes magical-visitor-particle-fade {
+  0%   { opacity: 0.9; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) translateY(-6px) scale(0.5); }
+}
+
+/* The destination flower's welcome response: a gentle glow + sway,
+   toggled on/off by magicalVisitor.js (garden-flower--visited),
+   timed to start as the visitor begins circling it. */
+.garden-flower--visited .garden-flower__graphic {
+  animation: magical-flower-welcome 2.6s ease-in-out 1;
+}
+
+@keyframes magical-flower-welcome {
+  0%   { filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0)); transform: rotate(0deg); }
+  30%  { filter: drop-shadow(0 0 10px rgba(255, 244, 220, 0.65)); transform: rotate(-2deg); }
+  60%  { filter: drop-shadow(0 0 14px rgba(255, 244, 220, 0.5)); transform: rotate(2deg); }
+  100% { filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0)); transform: rotate(0deg); }
+}
+
+/* fluffy drifting clouds, drawn with layered radial-gradients — no images */
+
 /* fluffy drifting clouds, drawn with layered radial-gradients — no images */
 
 /* the scene painted behind the text/flowers: distant hills sitting on
