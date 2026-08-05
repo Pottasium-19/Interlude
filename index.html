@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Interlude — Sync Engine (Phase 1)</title>
+  <title>Interlude</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
@@ -18,6 +18,34 @@
   </div>
   <div id="notification-panel" aria-live="polite"></div>
   <div id="flower-layer"></div>
+  <div id="library-hub-overlay">
+    <section id="library-panel">
+      <button id="library-close-btn" class="library-close-btn" aria-label="Close library">✕</button>
+      <h2>Personal Library</h2>
+      <div id="library-form">
+        <input id="library-input" type="text" placeholder="Paste a YouTube link" />
+        <button id="library-add-btn">Add</button>
+      </div>
+      <p id="library-message"></p>
+      <ul id="library-list"></ul>
+
+      <section id="flower-panel">
+        <h2>My Flower</h2>
+        <div class="flower-layer">
+          <h3>Outer (<span id="outer-count">0</span>/30)</h3>
+          <ul id="outer-list"></ul>
+        </div>
+        <div class="flower-layer">
+          <h3>Middle (<span id="middle-count">0</span>/20)</h3>
+          <ul id="middle-list"></ul>
+        </div>
+        <div class="flower-layer">
+          <h3>Inner (<span id="inner-count">0</span>/10)</h3>
+          <ul id="inner-list"></ul>
+        </div>
+      </section>
+    </section>
+  </div>
   <main id="app">
     <div class="garden-scene" aria-hidden="true"></div>
     <h1>Interlude</h1>
@@ -55,15 +83,7 @@
       </div>
     </section>
 
-    <section id="library-panel">
-      <h2>Personal Library</h2>
-      <div id="library-form">
-        <input id="library-input" type="text" placeholder="Paste a YouTube link" />
-        <button id="library-add-btn">Add</button>
-      </div>
-      <p id="library-message"></p>
-      <ul id="library-list"></ul>
-    </section>
+    
 
     <section id="flower-panel">
       <h2>Layered Flower (test)</h2>
