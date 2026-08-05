@@ -659,27 +659,49 @@ body:not(.is-playing) #pause-btn.icon-btn {
    (position:fixed) forms its own stacking context that already
    paints below #flower-layer's z-index:150, so the flower art stays
    in front of the panel as it zooms toward the edge. */
-#library-panel {
-  display: block;
+#library-hub-overlay {
   position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: min(22rem, 86vw);
-  z-index: 50;
-  box-sizing: border-box;
-  padding: 4rem 1.5rem 1.5rem;
-  overflow-y: auto;
-  background: var(--parchment, #f4ecd8);
-  box-shadow: -4px 0 18px rgba(20, 14, 10, 0.25);
-  color: var(--ink, #26261f);
-  transform: translateX(100%);
-  transition: transform 0.5s ease;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(38, 26, 15, 0);
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+  pointer-events: none;
+  transition: background 0.5s ease, backdrop-filter 0.5s ease, -webkit-backdrop-filter 0.5s ease;
+}
+
+#library-hub-overlay:has(#library-panel.library-panel--open) {
+  background: rgba(38, 26, 15, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   pointer-events: auto;
 }
 
+#library-panel {
+  display: block;
+  width: min(24rem, 90vw);
+  max-height: 70vh;
+  box-sizing: border-box;
+  padding: 3.25rem 1.5rem 1.5rem;
+  overflow-y: auto;
+  background: var(--parchment, #f4ecd8);
+  border-radius: 1.25rem;
+  box-shadow: 0 14px 44px rgba(20, 14, 10, 0.35), 0 0 0 2px var(--gold, #d9a35c);
+  color: var(--ink, #26261f);
+  transform-origin: 50% 50%;
+  transform: scale(0.04);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
+}
+
 #library-panel.library-panel--open {
-  transform: translateX(0);
+  transform: scale(1);
+  opacity: 1;
+  pointer-events: auto;
 }
 
 /* --- Zoom/slide toward the library panel (point 4). Same class flip
@@ -699,27 +721,10 @@ body:not(.is-playing) #pause-btn.icon-btn {
    match #library-panel's (0.5s ease) so the two motions read as one. */
 .garden-flower--panel-open {
   animation: none;
-  transition: transform 0.5s ease, filter 0.4s ease;
-  z-index: 60;
-}
-
-.garden-flower--pink.garden-flower--panel-open {
-  transform: translateX(38vw) scale(1.15);
-}
-
-.garden-flower--lavender.garden-flower--panel-open {
-  transform: translateX(53vw) scale(1.15);
-}
-
-.garden-flower--panel-open:hover,
-.garden-flower--panel-open:focus-visible {
-  transform: translateX(38vw) scale(1.15);
-  filter: brightness(1.1);
-}
-
-.garden-flower--lavender.garden-flower--panel-open:hover,
-.garden-flower--lavender.garden-flower--panel-open:focus-visible {
-  transform: translateX(53vw) scale(1.15);
+  transition: transform 0.45s ease, opacity 0.45s ease 0.15s;
+  transform: scale(1.12);
+  opacity: 0;
+  pointer-events: none;
 }
 
 
