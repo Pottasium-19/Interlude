@@ -8,6 +8,7 @@ import { getTimePeriod } from "./environmentState.js";
 import { scheduleWindGusts } from "./ambientEvents.js";
 import { schedulePollenTrails } from "./pollenTrails.js";
 import { scheduleShootingStars } from "./shootingStars.js";
+import { scheduleMagicalVisitor } from "./magicalVisitor.js";
 import {
   claimSlot,
   listenToRoom,
@@ -211,6 +212,7 @@ function init() {
   scheduleWindGusts();
   schedulePollenTrails();
   scheduleShootingStars();
+  scheduleMagicalVisitor();
 
     if (hasStoredSlot()) {
     joinRoom(); // refresh — silently rejoin instead of requiring another Join click
