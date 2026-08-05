@@ -199,8 +199,42 @@ export function toggleLibraryPanel(flowerId) {
       ?.classList.remove("garden-flower--panel-open");
   }
   openLibraryFlowerId = opening ? flowerId : null;
-  if (opening) node.classList.add("garden-flower--panel-open");
+  if (opening) {
+    setHubOrigin(node);
+    node.classList.add("garden-flower--panel-open");
+  }
   el.libraryPanel()?.classList.toggle("library-panel--open", opening);
+}
+
+/**
+ * Points the hub's transform-origin at flowerNode's current screen
+ * position, so style.css's scale(1) grows from that exact spot
+ * instead of dead-center (its default). Called only when opening —
+ * closeLibraryPanel() below leaves the last-set origin in place, so
+ * the hub shrinks back toward the same spot it grew from.
+ *
+ * Deliberately avoids getBoundingClientRect() on the panel itself —
+ * that would report its post-transform (still-shrunk) box. Since
+ * #library-hub-overlay centers the panel via flexbox rather than a
+ * translate() in the panel's own transform, the panel's untransformed
+ * top-left corner is exactly derivable from viewport size minus its
+ * own true size (offsetWidth/offsetHeight, which are transform-immune) —
+ * no rendered-position measurement of the panel needed.
+ */
+function setHubOrigin(flowerNode) {
+  const panel = el.libraryPanel();
+  if (!panel) return;
+
+  const flowerRect = flowerNode.getBoundingClientRect();
+  const flowerCenterX = flowerRect.left + flowerRect.width / 2;
+  const flowerCenterY = flowerRect.top + flowerRect.height / 2;
+
+  const panelLeft = (window.innerWidth - panel.offsetWidth) / 2;
+  const panelTop = (window.innerHeight - panel.offsetHeight) / 2;
+
+  const originX = flowerCenterX - panelLeft;
+  const originY = flowerCenterY - panelTop;
+  panel.style.transformOrigin = `${originX}px ${originY}px`;
 }
 
 /**
