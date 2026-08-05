@@ -320,6 +320,44 @@ body.is-day #butterfly-layer { opacity: 1; }
   100% { left: 95%; bottom: 58%; }
 }
 
+/* --- Pollen: a handful of barely-there motes drifting upward through the
+   air at all times, independent of day/night. Deliberately near-invisible
+   at rest — the wind-gust rule below is what makes them read as alive. */
+#pollen-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  pointer-events: none;
+}
+
+.pollen-mote {
+  position: absolute;
+  left: var(--x, 50%);
+  bottom: var(--y, 20%);
+  width: 2.5px;
+  height: 2.5px;
+  border-radius: 50%;
+  background: rgba(255, 248, 225, 0.55);
+  box-shadow: 0 0 3px 1px rgba(255, 240, 200, 0.3);
+  animation: pollen-drift var(--drift-dur, 22s) ease-in-out infinite,
+             pollen-fade calc(var(--drift-dur, 22s) / 2) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+  will-change: transform, opacity;
+}
+
+@keyframes pollen-drift {
+  0%   { transform: translate(0, 0); }
+  50%  { transform: translate(1.2vw, -3vh); }
+  100% { transform: translate(-0.6vw, -6vh); }
+}
+
+@keyframes pollen-fade {
+  0%, 100% { opacity: 0.15; }
+  50%      { opacity: 0.5; }
+}
+
+/* fluffy drifting clouds, drawn with layered radial-gradients — no images */
+
 /* fluffy drifting clouds, drawn with layered radial-gradients — no images */
 
 
@@ -1216,4 +1254,41 @@ body.art-mode #library-hub-overlay:not(:has(.library-panel--open)) {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.4s ease;
+}
+
+
+/* ==========================================================================
+   Phase 5 — Wind gusts. body.is-gusting is toggled on/off by
+   ambientEvents.js's scheduleWindGusts(). Every rule here only widens or
+   speeds up an existing animation — no new elements, no path rewrites.
+   ========================================================================== */
+
+body.is-gusting .garden-flower {
+  animation-name: garden-rise, garden-sway-gust;
+  animation-duration: 1.1s, 3.4s;
+}
+
+@keyframes garden-sway-gust {
+  0%, 100% { transform: rotate(0deg); }
+  50%      { transform: rotate(4.5deg); }
+}
+
+body.is-gusting .butterfly--1 { animation-duration: 22s; }
+body.is-gusting .butterfly--2 { animation-duration: 18s; }
+body.is-gusting .butterfly--3 { animation-duration: 27s; }
+
+body.is-gusting .firefly {
+  animation-name: firefly-drift-gust, firefly-blink;
+}
+
+@keyframes firefly-drift-gust {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(5.5vw, -4.5vh); }
+  50%  { transform: translate(-3.5vw, -8vh); }
+  75%  { transform: translate(4vw, -2.5vh); }
+  100% { transform: translate(0, 0); }
+}
+
+body.is-gusting .pollen-mote {
+  animation-duration: calc(var(--drift-dur, 22s) * 0.55), calc(var(--drift-dur, 22s) * 0.275);
 }
