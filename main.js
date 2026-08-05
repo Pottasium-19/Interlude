@@ -5,6 +5,7 @@
 
 import { syncServerTimeOffset, getCorrectedNow } from "./clock.js";
 import { getTimePeriod } from "./environmentState.js";
+import { scheduleWindGusts } from "./ambientEvents.js";
 import {
   claimSlot,
   listenToRoom,
@@ -205,6 +206,7 @@ function init() {
   applyEnvironment();
   setInterval(applyEnvironment, ENVIRONMENT_POLL_MS);
   applyDailyButterflyCount();
+  scheduleWindGusts();
 
     if (hasStoredSlot()) {
     joinRoom(); // refresh — silently rejoin instead of requiring another Join click
