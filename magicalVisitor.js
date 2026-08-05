@@ -11,8 +11,8 @@
 
 import { acquireRareEvent, releaseRareEvent } from "./ambientEvents.js";
 
-const CHECK_INTERVAL_MS = 90 * 1000;
-const SPAWN_CHANCE = 0.02; // ~1 in 50 checks — rarer than shooting stars, by design
+const CHECK_INTERVAL_MS = 30 * 1000;
+const SPAWN_CHANCE = 0.17; // ~1 in 50 checks — rarer than shooting stars, by design
 
 const FLIGHT_DURATION_MS = 16000;
 const CIRCLE_DURATION_MS = 2400;
