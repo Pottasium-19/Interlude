@@ -22,6 +22,7 @@ const el = {
   libraryList: () => document.getElementById("library-list"),
   libraryMessage: () => document.getElementById("library-message"),
   libraryPanel: () => document.getElementById("library-panel"),
+  libraryCloseBtn: () => document.getElementById("library-close-btn"),
   outerList: () => document.getElementById("outer-list"),
   middleList: () => document.getElementById("middle-list"),
   innerList: () => document.getElementById("inner-list"),
@@ -343,6 +344,10 @@ export function bindLibraryAdd(handler) {
     handler(value);
     el.libraryInput().value = "";
   });
+}
+
+export function bindLibraryClose(handler) {
+  el.libraryCloseBtn()?.addEventListener("click", handler);
 }
 
 /**
