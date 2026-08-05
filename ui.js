@@ -47,8 +47,21 @@ const OTHER_LAYERS = {
   inner: ["outer", "middle"]
 };
 
+/**
+ * Sets textContent and briefly flashes the element to full opacity via
+ * the .status-flash class (removed then re-added to force the CSS
+ * transition to restart even if the class is already present). Pairs
+ * with the subtle-by-default status message styling in style.css.
+ */
+function setStatusText(node, text) {
+  node.textContent = text;
+  node.classList.remove("status-flash");
+  void node.offsetWidth; // force reflow so re-adding the class retriggers the transition
+  node.classList.add("status-flash");
+}
+
 export function renderConnectionStatus(text) {
-  el.connectionStatus().textContent = text;
+  setStatusText(el.connectionStatus(), text);
 }
 
 /**
@@ -70,7 +83,7 @@ export function renderReadyStatus({ user1Ready, user2Ready }, mySlot) {
   } else {
     readyText = "Not ready yet.";
   }
-  el.readyStatus().textContent = readyText;
+  setStatusText(el.readyStatus(), readyText);
   el.readyBtn().textContent = myReady ? "Cancel Ready" : "Ready";
   return myReady;
 }
@@ -92,7 +105,7 @@ const PLAYER_STATE_PHRASES = {
 };
 
 export function renderPlayerState(state) {
-  el.playerState().textContent = PLAYER_STATE_PHRASES[state] || "The music is resting.";
+  setStatusText(el.playerState(), PLAYER_STATE_PHRASES[state] || "The music is resting.");
   document.body.classList.toggle("is-playing", state === "playing");
 }
 
@@ -104,9 +117,10 @@ const LAST_ACTION_PHRASES = {
 };
 
 export function renderLastAction(action, by) {
-  el.lastAction().textContent = action
-    ? `${by} ${LAST_ACTION_PHRASES[action] || "stirred the melody"}`
-    : "";
+  setStatusText(
+    el.lastAction(),
+    action ? `${by} ${LAST_ACTION_PHRASES[action] || "stirred the melody"}` : ""
+  );
 }
 
 export function bindReadyButton(handler) {
