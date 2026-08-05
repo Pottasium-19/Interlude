@@ -452,6 +452,10 @@ body.is-night .garden-scene::after {
   letter-spacing: 0.02em;
 }
 
+.garden-flower__label {
+  display: none;
+}
+
 .garden-flower--unavailable {
   opacity: 0.45;
   cursor: not-allowed;
