@@ -14,7 +14,11 @@ import { acquireRareEvent, releaseRareEvent } from "./ambientEvents.js";
 const CHECK_INTERVAL_MS = 30 * 1000;
 const SPAWN_CHANCE = 0.17; // ~1 in 50 checks — rarer than shooting stars, by design
 
-const FLIGHT_DURATION_MS = 16000;
+const FLIGHT_DURATION_MS = 14500; // Ambient Polish Pass: trimmed from 16000 for a slightly
+                                   // brisker, more dancing pace — kept modest on purpose,
+                                   // since the wider path templates above already cover
+                                   // more distance in the same time, which reads as faster
+                                   // on its own even before this trim.
 const CIRCLE_DURATION_MS = 2400;
 const REST_DURATION_MS = 1300;
 const FADE_DURATION_MS = 1800;
@@ -33,25 +37,52 @@ const NIGHT_PALETTE = ["#f5f7ff", "#a8c8f0", "#a9eaea", "#c3a9e8"]; // Moon Whit
  * two flowers are actually involved, so the same template mirrors and
  * reverses correctly no matter which flower is the start. Weight controls
  * selection odds; "heart" is deliberately rare.
+ *
+ * Ambient Polish Pass — path expansion. v magnitudes on the four original
+ * templates are scaled up (roughly 1.8x-2x) so their swings reach much
+ * further from the direct flower-to-flower line — since the flowers sit
+ * close together near the bottom of the screen, a bigger v is what turns
+ * a modest wobble into a real excursion toward the upper sky or screen
+ * center. clampToViewport() (below) already keeps any point safely
+ * inside the visible area, so there was no ceiling on v to respect here
+ * beyond "still reads as elegant." Two new templates (sky-sweep,
+ * wide-side-loop) push further still, for the widest, most exploratory
+ * journeys. "heart" is left at its original scale on purpose — it's
+ * meant to stay proportionally recognizable, not grow with the rest.
  */
 const PATH_TEMPLATES = [
   { name: "gentle-arc", weight: 5, waypoints: [
-    { u: 0, v: 0 }, { u: 0.22, v: -0.50 }, { u: 0.45, v: -0.40 }, { u: 0.6, v: 0.05 },
-    { u: 0.75, v: 0.35 }, { u: 0.9, v: 0.13 }, { u: 1, v: 0 }
+    { u: 0, v: 0 }, { u: 0.22, v: -0.95 }, { u: 0.45, v: -0.76 }, { u: 0.6, v: 0.10 },
+    { u: 0.75, v: 0.67 }, { u: 0.9, v: 0.25 }, { u: 1, v: 0 }
   ] },
   { name: "s-curve", weight: 5, waypoints: [
-    { u: 0, v: 0 }, { u: 0.2, v: -0.45 }, { u: 0.4, v: -0.12 }, { u: 0.55, v: 0.35 },
-    { u: 0.72, v: 0.50 }, { u: 0.88, v: 0.15 }, { u: 1, v: 0 }
+    { u: 0, v: 0 }, { u: 0.2, v: -0.86 }, { u: 0.4, v: -0.23 }, { u: 0.55, v: 0.67 },
+    { u: 0.72, v: 0.95 }, { u: 0.88, v: 0.29 }, { u: 1, v: 0 }
   ] },
   { name: "big-loop", weight: 4, waypoints: [
-    { u: 0, v: 0 }, { u: 0.18, v: -0.35 }, { u: 0.32, v: -0.65 }, { u: 0.40, v: -0.25 },
-    { u: 0.46, v: 0.25 }, { u: 0.38, v: 0.50 }, { u: 0.34, v: 0.15 },
-    { u: 0.48, v: -0.15 }, { u: 0.65, v: 0.20 }, { u: 0.82, v: 0.38 }, { u: 1, v: 0 }
+    { u: 0, v: 0 }, { u: 0.18, v: -0.70 }, { u: 0.32, v: -1.30 }, { u: 0.40, v: -0.50 },
+    { u: 0.46, v: 0.50 }, { u: 0.38, v: 1.00 }, { u: 0.34, v: 0.30 },
+    { u: 0.48, v: -0.30 }, { u: 0.65, v: 0.40 }, { u: 0.82, v: 0.76 }, { u: 1, v: 0 }
   ] },
   { name: "wandering-pause", weight: 4, waypoints: [
-    { u: 0, v: 0 }, { u: 0.12, v: 0.40 }, { u: 0.26, v: 0.50 }, { u: 0.34, v: 0.25 }, { u: 0.34, v: 0.25 },
-    { u: 0.46, v: -0.15 }, { u: 0.58, v: -0.45 }, { u: 0.68, v: -0.20 }, { u: 0.68, v: -0.20 },
-    { u: 0.82, v: 0.25 }, { u: 0.94, v: 0.05 }, { u: 1, v: 0 }
+    { u: 0, v: 0 }, { u: 0.12, v: 0.72 }, { u: 0.26, v: 0.90 }, { u: 0.34, v: 0.45 }, { u: 0.34, v: 0.45 },
+    { u: 0.46, v: -0.27 }, { u: 0.58, v: -0.81 }, { u: 0.68, v: -0.36 }, { u: 0.68, v: -0.36 },
+    { u: 0.82, v: 0.45 }, { u: 0.94, v: 0.09 }, { u: 1, v: 0 }
+  ] },
+  // New — sweeps high overhead before descending, for the "upper sky"
+  // journeys. The plateau from 0.30-0.58 is deliberately near-flat (v
+  // barely moves) so it reads as a held high arc, not a spike.
+  { name: "sky-sweep", weight: 4, waypoints: [
+    { u: 0, v: 0 }, { u: 0.15, v: -0.55 }, { u: 0.30, v: -1.35 }, { u: 0.42, v: -1.75 },
+    { u: 0.5, v: -1.85 }, { u: 0.58, v: -1.70 }, { u: 0.70, v: -1.20 }, { u: 0.85, v: -0.45 },
+    { u: 1, v: 0 }
+  ] },
+  // New — a long swing far out to one side with a small loop-back near
+  // its peak, for the "wide side arcs" / "long sweeping curve" journeys.
+  { name: "wide-side-loop", weight: 3.5, waypoints: [
+    { u: 0, v: 0 }, { u: 0.14, v: 0.50 }, { u: 0.26, v: 1.10 }, { u: 0.36, v: 1.65 },
+    { u: 0.44, v: 1.85 }, { u: 0.5, v: 1.55 }, { u: 0.56, v: 1.75 }, { u: 0.66, v: 1.40 },
+    { u: 0.8, v: 0.70 }, { u: 0.92, v: 0.20 }, { u: 1, v: 0 }
   ] },
   // A loose heart trace, sized up along with the other templates but kept
   // proportionally recognizable — not meant to be an obvious symbol, just
