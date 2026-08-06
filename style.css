@@ -309,6 +309,22 @@ body.is-day #butterfly-layer { opacity: 1; }
    flowers). Each butterfly's <li>/span is hidden or shown per-day by
    ui.js's applyDailyButterflyCount(), which also shuffles which of the
    three appear — so it isn't the same 1-3 pattern every day. */
+
+/* Ambient Polish Pass — resting flap. --flap-envelope is a smoothly
+   interpolatable custom property (hence the @property registration)
+   that butterfly-flap's own keyframes read via var() below. It stays
+   at its initial value of 1 (full flap) for any butterfly that never
+   lands (butterfly--2). For butterfly--1/--3, a second animation named
+   butterfly-flap-envelope-N runs in lockstep with that butterfly's own
+   position animation (same duration + delay), dipping the value low
+   only during the flat/resting stretch of its path — see .butterfly--1
+   and .butterfly--3 below. */
+@property --flap-envelope {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+
 .butterfly {
   position: absolute;
   left: 5%;
@@ -334,6 +350,20 @@ body.is-day #butterfly-layer { opacity: 1; }
 .butterfly::before { left: 0; transform-origin: right center; }
 .butterfly::after   { right: 0; transform-origin: left center; animation-delay: -0.21s; }
 
+/* Butterfly 1 has no dedicated rule elsewhere — it runs entirely on
+   the base .butterfly declaration above (butterfly-path-1, 34s, 0s
+   delay). Re-declared here as a second, comma-paired animation so the
+   envelope runs on the same 34s/0s timeline and stays perfectly in
+   phase with the landing at 46%-68% (see butterfly-path-1 below).
+   animation-timing-function/iteration-count aren't repeated here on
+   purpose — CSS cycles the single ease-in-out/infinite values already
+   set by the base rule's shorthand across both animations. */
+.butterfly--1 {
+  animation-name: butterfly-path-1, butterfly-flap-envelope-1;
+  animation-duration: 34s, 34s;
+  animation-delay: 0s, 0s;
+}
+
 .butterfly--2 {
   --wing-color: rgba(214, 176, 200, 0.88);
   animation-name: butterfly-path-2;
@@ -343,14 +373,21 @@ body.is-day #butterfly-layer { opacity: 1; }
 
 .butterfly--3 {
   --wing-color: rgba(196, 210, 168, 0.88);
-  animation-name: butterfly-path-3;
-  animation-duration: 41s;
-  animation-delay: -14s;
+  /* Second, comma-paired animation — same reasoning as .butterfly--1
+     above, timed to butterfly-path-3's own 41s/-14s so the envelope
+     stays locked to its 54%-72% resting stretch. */
+  animation-name: butterfly-path-3, butterfly-flap-envelope-3;
+  animation-duration: 41s, 41s;
+  animation-delay: -14s, -14s;
 }
 
 @keyframes butterfly-flap {
   from { transform: scaleX(1); }
-  to   { transform: scaleX(0.3); }
+  /* 0.7 is the full-flight flap depth (unchanged: 1 - 0.7 = the
+     original 0.3). --flap-envelope dials that depth down toward 1
+     (near-flat, barely-there) while a butterfly is resting, without
+     touching the flap's own 0.42s timing. */
+  to   { transform: scaleX(calc(1 - (0.7 * var(--flap-envelope, 1)))); }
 }
 
 /* Lands and rests near the pink flower (left:42%, bottom:7%) partway through */
@@ -364,6 +401,17 @@ body.is-day #butterfly-layer { opacity: 1; }
   100% { left: 92%; bottom: 40%; }
 }
 
+/* Flap dampens just before touchdown (40%), bottoms out through the
+   46%-68% rest stretch above, and eases back up just after takeoff
+   (74%) — a few points of lead-in/lead-out on each side so the
+   settle/wake reads as a motion, not a snap. */
+@keyframes butterfly-flap-envelope-1 {
+  0%, 40%   { --flap-envelope: 1; }
+  48%       { --flap-envelope: 0.16; }
+  66%       { --flap-envelope: 0.16; }
+  74%, 100% { --flap-envelope: 1; }
+}
+
 /* Never lands — just lazy edge-to-edge fluttering */
 @keyframes butterfly-path-2 {
   0%   { left: 90%; bottom: 34%; }
@@ -374,6 +422,7 @@ body.is-day #butterfly-layer { opacity: 1; }
 }
 
 /* Lands and rests near the lavender flower (left:27%, bottom:7%) */
+/* Lands and rests near the lavender flower (left:27%, bottom:7%) */
 @keyframes butterfly-path-3 {
   0%   { left: 95%; bottom: 58%; }
   24%  { left: 60%; bottom: 38%; }
@@ -382,6 +431,15 @@ body.is-day #butterfly-layer { opacity: 1; }
   72%  { left: 27%; bottom: 9%; }
   90%  { left: 8%;  bottom: 54%; }
   100% { left: 95%; bottom: 58%; }
+}
+
+/* Same lead-in/lead-out logic as butterfly-flap-envelope-1, timed to
+   butterfly-path-3's own 54%-72% rest stretch instead. */
+@keyframes butterfly-flap-envelope-3 {
+  0%, 48%   { --flap-envelope: 1; }
+  58%       { --flap-envelope: 0.16; }
+  68%       { --flap-envelope: 0.16; }
+  78%, 100% { --flap-envelope: 1; }
 }
 
 /* --- Pollen: a handful of barely-there motes drifting upward through the
