@@ -15,7 +15,7 @@ import {
 
 import { db } from "./firebase.js";
 import { extractVideoId, fetchVideoTitle } from "./youtubeUtils.js"; 
-import { getUserId } from "./room.js";
+// No room.js import — a flower's library must not depend on room/session identity.
 
 // Local cache of the last snapshot, kept in sync via onSnapshot. Lets
 // has()/getAll() answer synchronously and lets add() reject duplicates
@@ -23,9 +23,9 @@ import { getUserId } from "./room.js";
 let cachedSongs = [];
 let unsubscribe = null;
 
-function songsCollectionRef() {
-  return collection(db, "libraries", getUserId(), "songs");
-}
+function songsCollectionRef(flowerId) {
+   return collection(db, "libraries", flowerId, "songs");
+ }
 
 /**
  * Starts listening to this user's library in Firestore. `onChange` is
