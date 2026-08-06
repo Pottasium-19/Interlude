@@ -10,7 +10,9 @@ import { acquireRareEvent, releaseRareEvent } from "./ambientEvents.js";
 
 const CHECK_INTERVAL_MS = 20 * 1000;
 const SPAWN_CHANCE = 0.25; // rolled every check, only at night, only if the lock is free — tuned to feel "extremely rare" (~10 min average gap)
-const STREAK_DURATION_MS = 1000;
+const STREAK_DURATION_MS = 2400;
+const TRAIL_DOT_INTERVAL_MS = 90;
+const TRAIL_DOT_LIFETIME_MS = 900;
 
 function isNight() {
   return document.body.classList.contains("is-night");
@@ -24,28 +26,48 @@ function spawnStreak() {
   const mount = document.getElementById("shooting-star-layer");
   if (!mount) return;
 
-  // Start point: upper sky band, in viewport percent (not tied to any
-  // fixed artwork coordinate, per the "no hardcoded pixel positions" rule).
-  const startXVw = randomBetween(5, 90);
-  const startYVh = randomBetween(4, 36);
-
-  // Travel vector: random-ish diagonal, always drifting downward. dx sign
-  // is randomized so the streak can head down-left or down-right.
-  const dxVw = randomBetween(18, 34) * (Math.random() < 0.5 ? -1 : 1);
-  const dyVh = randomBetween(10, 22);
+  // Full edge-to-edge flight across the top portion of the screen — starts
+  // just off one side and travels to just off the other, rather than a
+  // short diagonal streak. Direction (left->right vs right->left) is
+  // randomized; a gentle downward drift is layered on for a natural arc.
+  const fromLeft = Math.random() < 0.5;
+  const startXVw = fromLeft ? -8 : 108;
+  const startYVh = randomBetween(4, 28);
+  const dxVw = (fromLeft ? 1 : -1) * randomBetween(112, 128);
+  const dyVh = randomBetween(4, 14);
   const angleDeg = Math.atan2(dyVh, dxVw) * (180 / Math.PI);
 
   const star = document.createElement("span");
   star.className = "shooting-star";
   star.style.left = `${startXVw}vw`;
   star.style.top = `${startYVh}vh`;
-  star.style.width = `${randomBetween(60, 105)}px`;
+  star.style.width = `${randomBetween(150, 220)}px`;
   star.style.setProperty("--tx", `${dxVw}vw`);
   star.style.setProperty("--ty", `${dyVh}vh`);
   star.style.setProperty("--angle", `${angleDeg}deg`);
+  star.style.animationDuration = `${STREAK_DURATION_MS}ms`;
   mount.appendChild(star);
 
-  setTimeout(() => star.remove(), STREAK_DURATION_MS + 100);
+  // Flowing trail: a fading dot dropped at the star's current position on
+  // an interval, so a trail visibly persists behind it until the flight
+  // completes (same spawn/self-remove shape as pixie dust). Position is
+  // interpolated linearly against elapsed time — a close approximation of
+  // the ease-out motion, plenty accurate for a fading trail dot.
+  const startTime = performance.now();
+  const trailTimer = setInterval(() => {
+    const t = Math.min((performance.now() - startTime) / STREAK_DURATION_MS, 1);
+    const dot = document.createElement("span");
+    dot.className = "shooting-star-trail-dot";
+    dot.style.left = `${startXVw + dxVw * t}vw`;
+    dot.style.top = `${startYVh + dyVh * t}vh`;
+    mount.appendChild(dot);
+    setTimeout(() => dot.remove(), TRAIL_DOT_LIFETIME_MS);
+  }, TRAIL_DOT_INTERVAL_MS);
+
+  setTimeout(() => {
+    clearInterval(trailTimer);
+    star.remove();
+  }, STREAK_DURATION_MS + 100);
 }
 
 function tick() {
