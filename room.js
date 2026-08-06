@@ -14,6 +14,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./firebase.js";
+import { getCorrectedNow } from "./clock.js";
 
 const ROOM_ID = "main-room";
 const HEARTBEAT_INTERVAL_MS = 5000;
@@ -310,7 +311,11 @@ export function isPresenceStale(lastSeenTimestamp) {
   const lastSeenMillis = lastSeenTimestamp.toMillis
     ? lastSeenTimestamp.toMillis()
     : lastSeenTimestamp;
-  return Date.now() - lastSeenMillis > STALE_THRESHOLD_MS;
+  // getCorrectedNow() (clock.js) aligns to Firestore's server clock, so
+  // this stays correct even when a device's own clock has been changed
+  // (e.g. to test day/night) — a raw Date.now() here would drift from
+  // the server-based lastSeen and wrongly call the other device stale.
+  return getCorrectedNow() - lastSeenMillis > STALE_THRESHOLD_MS;
 }
 
 export const ROOM_ID_EXPORT = ROOM_ID;
