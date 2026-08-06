@@ -1147,12 +1147,6 @@ body.is-night .icon-btn {
   filter: brightness(0.87) saturate(0.72) hue-rotate(6deg);
 }
 
-#library-join-btn.icon-btn {
-  top: 5%;
-  left: 6%;
-  background-image: url("Join.png");
-}
-
 #leave-btn.icon-btn {
   top: 5%;
   left: 6%;
@@ -1202,8 +1196,7 @@ body.is-night .icon-btn {
 
 /* Swap pairs — only one of each shows at a time, driven by body classes
    toggled from renderPlayerState() / setJoinedState() in ui.js. */
-body:not(.is-joined) #leave-btn.icon-btn,
-body.is-joined #library-join-btn.icon-btn {
+body:not(.is-joined) #leave-btn.icon-btn {
   display: none;
 }
 
@@ -1514,6 +1507,25 @@ body:not(.is-playing) #pause-btn.icon-btn {
   pointer-events: none;
   cursor: default;
   transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
+}
+
+#library-panel #library-join-btn {
+  display: block;
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--gold, #d9a35c);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink, #26261f);
+  font-family: 'EB Garamond', Georgia, serif;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+#library-panel #library-join-btn:hover,
+#library-panel #library-join-btn:focus-visible {
+  background: var(--gold, #d9a35c);
+  color: var(--parchment, #f4ecd8);
 }
 
 #library-panel.library-panel--open {
