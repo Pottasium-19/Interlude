@@ -526,6 +526,11 @@ export function setTimeOfDay(period) {
   document.body.classList.toggle("is-sunset", period === "sunset");
 }
 
+/** Toggles body.is-rain, which drives the rain art/particle crossfade in CSS. */
+export function setRain(isRaining) {
+  document.body.classList.toggle("is-rain", isRaining);
+}
+
 /** Tiny deterministic hash — same shape as environmentState.js's private
  * seededFraction, kept local here since it's a presentation-only concern
  * (which/how-many butterflies render) rather than scene-state logic. */
