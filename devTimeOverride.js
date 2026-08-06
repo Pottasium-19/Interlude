@@ -9,8 +9,8 @@
 // is set — this file only ever calls the same setTimeOfDay()/
 // getTimePeriod() the real detection already uses.
 
-import { setTimePeriodOverride, getTimePeriod } from "./environmentState.js";
-import { setTimeOfDay } from "./ui.js";
+import { setTimePeriodOverride, getTimePeriod, setRainOverride } from "./environmentState.js";
+import { setTimeOfDay, setRain } from "./ui.js";
 
 const LONG_PRESS_MS = 600;
 const MOVE_TOLERANCE_PX = 12;
@@ -25,6 +25,11 @@ function isInteractiveTarget(target) {
 function applyOverride(period) {
   setTimePeriodOverride(period); // "day" | "night" | null (null = back to real clock)
   setTimeOfDay(getTimePeriod());
+}
+
+function applyRainOverride(value) {
+  setRainOverride(value); // true | false | null
+  if (value !== null) setRain(value);
 }
 
 function closePicker() {
@@ -65,6 +70,27 @@ function buildPicker() {
     picker.appendChild(btn);
   });
 
+  const rainHeading = document.createElement("p");
+  rainHeading.className = "dev-time-picker__heading";
+  rainHeading.textContent = "Rain:";
+  picker.appendChild(rainHeading);
+
+  [
+    { label: "Rain On", value: true },
+    { label: "Rain Off", value: false },
+    { label: "Rain Auto", value: null }
+  ].forEach(({ label, value }) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "dev-time-picker__option";
+    btn.textContent = label;
+    btn.addEventListener("click", () => {
+      applyRainOverride(value);
+      closePicker();
+    });
+    picker.appendChild(btn);
+  });
+  
   const cancelBtn = document.createElement("button");
   cancelBtn.type = "button";
   cancelBtn.className = "dev-time-picker__cancel";
