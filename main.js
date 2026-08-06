@@ -7,6 +7,8 @@ import { syncServerTimeOffset, getCorrectedNow } from "./clock.js";
 import { getTimePeriod } from "./environmentState.js";
 import { scheduleWindGusts } from "./ambientEvents.js";
 import { schedulePollenTrails } from "./pollenTrails.js";
+import { scheduleRain } from "./rainScheduler.js";
+import { scheduleRaindropHits } from "./rainDrops.js";
 import { scheduleShootingStars } from "./shootingStars.js";
 import { bindDevTimeOverride } from "./devTimeOverride.js";
 import { scheduleMagicalVisitor } from "./magicalVisitor.js";
@@ -216,6 +218,8 @@ initLibrary("lavender");
   applyDailyButterflyCount();
   scheduleWindGusts();
   schedulePollenTrails();
+  scheduleRain();
+  scheduleRaindropHits();
   scheduleShootingStars();
   scheduleMagicalVisitor();
 
