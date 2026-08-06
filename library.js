@@ -20,8 +20,8 @@ import { extractVideoId, fetchVideoTitle } from "./youtubeUtils.js";
 // Local cache of the last snapshot, kept in sync via onSnapshot. Lets
 // has()/getAll() answer synchronously and lets add() reject duplicates
 // without an extra round trip.
-let cachedSongs = [];
-let unsubscribe = null;
+let cachedSongs = { pink: [], lavender: [] };
+let unsubscribes = { pink: null, lavender: null };
 
 function songsCollectionRef(flowerId) {
    return collection(db, "libraries", flowerId, "songs");
