@@ -755,6 +755,7 @@ async function handleLeaveRoom() {
   setGardenFlowerRoles(null, false);
   closeLibraryPanel();
   setJoinButtonEnabled(true);
+  setLibraryJoinVisible(true);
 }
 
 
