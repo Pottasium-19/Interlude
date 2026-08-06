@@ -37,6 +37,7 @@ const el = {
   flowerLayer: () => document.getElementById("flower-layer"),
   butterflyLayer: () => document.getElementById("butterfly-layer"),
   artModeToggle: () => document.getElementById("art-mode-toggle"),
+  libraryJoinBtn: () => document.getElementById("library-join-btn"),
 };
 
 const LAYER_LIST_EL = { outer: el.outerList, middle: el.middleList, inner: el.innerList };
@@ -188,34 +189,18 @@ function buildGardenFlowerNode(flowerId, label) {
 }
 
 /**
- * Pre-join, clicking either flower triggers onJoin(flowerId) — the
- * existing joinRoom() flow. Which flower was clicked doesn't matter
- * pre-join (assignment is by room slot, not by click target).
- *
- * Post-join (body.is-joined, set by setJoinedState), a click instead
- * calls onToggleLibrary(flowerId) — but only for the flower carrying
- * garden-flower--mine (set by setGardenFlowerRoles). The partner's
- * flower (garden-flower--partner) is not clickable this way; its
- * click is swallowed.
- *
- * Enter/Space mirrors click for the role="button" nodes above.
+ * Single tap (or Enter/Space) on either flower always opens its own
+ * library panel — no join-vs-library branching here anymore. Which
+ * flower is "mine" (and therefore shows the Join Room control inside
+ * the panel) is decided by main.js, not by the tap itself.
  */
-export function bindFlowerSelect(onJoin, onToggleLibrary) {
+export function bindFlowerSelect(onToggleLibrary) {
   [
     [el.gardenFlowerPink(), "pink"],
     [el.gardenFlowerLavender(), "lavender"]
   ].forEach(([node, flowerId]) => {
     if (!node) return;
-    const activate = () => {
-      const isJoined = document.body.classList.contains("is-joined");
-      const isEditable = !isJoined || node.classList.contains("garden-flower--mine") || node.classList.contains("garden-flower--partner");
-    if (isEditable) {
-       onToggleLibrary(flowerId);
-        return;
-      }
-     onJoin(flowerId);
-    };
-    };
+    const activate = () => onToggleLibrary(flowerId);
     node.addEventListener("click", activate);
     node.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
@@ -225,8 +210,12 @@ export function bindFlowerSelect(onJoin, onToggleLibrary) {
     });
   });
 }
-
 let openLibraryFlowerId = null;
+
+/** Returns whichever flowerId's library panel is currently open, or null. */
+export function getOpenLibraryFlowerId() {
+  return openLibraryFlowerId;
+}
 
 /**
  * Toggles the library-open state for `flowerId`'s own flower — only
@@ -429,6 +418,16 @@ export function bindLibraryAdd(handler) {
 
 export function bindLibraryClose(handler) {
   el.libraryCloseBtn()?.addEventListener("click", handler);
+}
+
+export function bindLibraryJoin(handler) {
+  el.libraryJoinBtn()?.addEventListener("click", handler);
+}
+
+/** Shows/hides the Join Room control inside the currently-rendered library panel. */
+export function setLibraryJoinVisible(visible) {
+  const btn = el.libraryJoinBtn();
+  if (btn) btn.style.display = visible ? "" : "none";
 }
 
 /**
