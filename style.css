@@ -14,6 +14,48 @@
   --gold: #d9a35c;
 }
 
+/* --- Dev time-of-day picker: opened by devTimeOverride.js on a
+   long-press anywhere on the garden. Testing aid only — plain,
+   functional styling, no atmosphere polish needed. */
+#dev-time-picker {
+  position: fixed;
+  z-index: 500;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  min-width: 200px;
+  background: var(--parchment, #f4ecd8);
+  color: var(--ink, #26261f);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+.dev-time-picker__heading {
+  margin: 0 0 4px;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.dev-time-picker__option,
+.dev-time-picker__cancel {
+  padding: 10px 12px;
+  border: 1px solid var(--gold, #d9a35c);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.dev-time-picker__cancel {
+  border-color: transparent;
+  opacity: 0.6;
+}
+
 html, body {
   height: 100%;
   overflow: hidden;
