@@ -1147,7 +1147,7 @@ body.is-night .icon-btn {
   filter: brightness(0.87) saturate(0.72) hue-rotate(6deg);
 }
 
-#join-btn.icon-btn {
+#library-join-btn.icon-btn {
   top: 5%;
   left: 6%;
   background-image: url("Join.png");
@@ -1203,7 +1203,7 @@ body.is-night .icon-btn {
 /* Swap pairs — only one of each shows at a time, driven by body classes
    toggled from renderPlayerState() / setJoinedState() in ui.js. */
 body:not(.is-joined) #leave-btn.icon-btn,
-body.is-joined #join-btn.icon-btn {
+body.is-joined #library-join-btn.icon-btn {
   display: none;
 }
 
@@ -1345,7 +1345,7 @@ body:not(.is-playing) #pause-btn.icon-btn {
 }
 
 /* --- Join / Leave, top left --- */
-#join-btn.icon-btn,
+#library-join-btn.icon-btn,
 #leave-btn.icon-btn {
   top: 3%;
   left: 3%;
