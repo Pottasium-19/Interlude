@@ -36,33 +36,33 @@ const NIGHT_PALETTE = ["#f5f7ff", "#a8c8f0", "#a9eaea", "#c3a9e8"]; // Moon Whit
  */
 const PATH_TEMPLATES = [
   { name: "gentle-arc", weight: 5, waypoints: [
-    { u: 0, v: 0 }, { u: 0.22, v: -0.20 }, { u: 0.45, v: -0.16 }, { u: 0.6, v: 0.02 },
-    { u: 0.75, v: 0.14 }, { u: 0.9, v: 0.05 }, { u: 1, v: 0 }
+    { u: 0, v: 0 }, { u: 0.22, v: -0.50 }, { u: 0.45, v: -0.40 }, { u: 0.6, v: 0.05 },
+    { u: 0.75, v: 0.35 }, { u: 0.9, v: 0.13 }, { u: 1, v: 0 }
   ] },
   { name: "s-curve", weight: 5, waypoints: [
-    { u: 0, v: 0 }, { u: 0.2, v: -0.18 }, { u: 0.4, v: -0.05 }, { u: 0.55, v: 0.14 },
-    { u: 0.72, v: 0.20 }, { u: 0.88, v: 0.06 }, { u: 1, v: 0 }
+    { u: 0, v: 0 }, { u: 0.2, v: -0.45 }, { u: 0.4, v: -0.12 }, { u: 0.55, v: 0.35 },
+    { u: 0.72, v: 0.50 }, { u: 0.88, v: 0.15 }, { u: 1, v: 0 }
   ] },
-  { name: "tiny-loop", weight: 4, waypoints: [
-    { u: 0, v: 0 }, { u: 0.18, v: -0.14 }, { u: 0.32, v: -0.26 }, { u: 0.40, v: -0.10 },
-    { u: 0.46, v: 0.10 }, { u: 0.38, v: 0.20 }, { u: 0.34, v: 0.06 },
-    { u: 0.48, v: -0.06 }, { u: 0.65, v: 0.08 }, { u: 0.82, v: 0.15 }, { u: 1, v: 0 }
+  { name: "big-loop", weight: 4, waypoints: [
+    { u: 0, v: 0 }, { u: 0.18, v: -0.35 }, { u: 0.32, v: -0.65 }, { u: 0.40, v: -0.25 },
+    { u: 0.46, v: 0.25 }, { u: 0.38, v: 0.50 }, { u: 0.34, v: 0.15 },
+    { u: 0.48, v: -0.15 }, { u: 0.65, v: 0.20 }, { u: 0.82, v: 0.38 }, { u: 1, v: 0 }
   ] },
   { name: "wandering-pause", weight: 4, waypoints: [
-    { u: 0, v: 0 }, { u: 0.12, v: 0.16 }, { u: 0.26, v: 0.20 }, { u: 0.34, v: 0.10 }, { u: 0.34, v: 0.10 },
-    { u: 0.46, v: -0.06 }, { u: 0.58, v: -0.18 }, { u: 0.68, v: -0.08 }, { u: 0.68, v: -0.08 },
-    { u: 0.82, v: 0.10 }, { u: 0.94, v: 0.02 }, { u: 1, v: 0 }
+    { u: 0, v: 0 }, { u: 0.12, v: 0.40 }, { u: 0.26, v: 0.50 }, { u: 0.34, v: 0.25 }, { u: 0.34, v: 0.25 },
+    { u: 0.46, v: -0.15 }, { u: 0.58, v: -0.45 }, { u: 0.68, v: -0.20 }, { u: 0.68, v: -0.20 },
+    { u: 0.82, v: 0.25 }, { u: 0.94, v: 0.05 }, { u: 1, v: 0 }
   ] },
-  // A deliberately loose, small heart trace — not meant to read as an
-  // obvious symbol, just barely-there enough that someone watching
-  // closely might notice it. Kept rare via a low weight below.
-  { name: "heart", weight: 0.7, waypoints: [
-    { u: 0, v: 0 }, { u: 0.16, v: -0.10 }, { u: 0.26, v: -0.24 }, { u: 0.34, v: -0.30 }, { u: 0.42, v: -0.22 },
-    { u: 0.46, v: -0.08 }, { u: 0.5, v: 0.08 }, { u: 0.54, v: -0.08 }, { u: 0.58, v: -0.22 },
-    { u: 0.66, v: -0.30 }, { u: 0.74, v: -0.24 }, { u: 0.84, v: -0.10 }, { u: 1, v: 0 }
+  // A loose heart trace, sized up along with the other templates but kept
+  // proportionally recognizable — not meant to be an obvious symbol, just
+  // noticeable enough that someone watching closely might catch it. Kept
+  // rare via a low weight below.
+  { name: "heart", weight: 1.2, waypoints: [
+    { u: 0, v: 0 }, { u: 0.16, v: -0.20 }, { u: 0.26, v: -0.45 }, { u: 0.34, v: -0.55 }, { u: 0.42, v: -0.42 },
+    { u: 0.46, v: -0.15 }, { u: 0.5, v: 0.15 }, { u: 0.54, v: -0.15 }, { u: 0.58, v: -0.42 },
+    { u: 0.66, v: -0.55 }, { u: 0.74, v: -0.45 }, { u: 0.84, v: -0.20 }, { u: 1, v: 0 }
   ] }
 ];
-
 function pickTemplate() {
   const total = PATH_TEMPLATES.reduce((sum, t) => sum + t.weight, 0);
   let roll = Math.random() * total;
@@ -96,12 +96,25 @@ function catmullRomToBezierPath(points) {
   return d.trim();
 }
 
+// Bigger loops can push a point past the visible viewport, so each
+// computed point is pulled back inside a small margin — keeps the path
+// dramatic without ever sending the visitor fully off-screen.
+function clampToViewport(point) {
+  const margin = 24;
+  return {
+    x: Math.min(Math.max(point.x, margin), window.innerWidth - margin),
+    y: Math.min(Math.max(point.y, margin), window.innerHeight - margin)
+  };
+}
+
 function buildFlightPath(template, start, end) {
   const dx = end.x - start.x;
   const dy = end.y - start.y;
   const distance = Math.hypot(dx, dy);
   const angle = Math.atan2(dy, dx);
-  const points = template.waypoints.map(({ u, v }) => pointAt(start, angle, distance, u, v));
+  const points = template.waypoints
+    .map(({ u, v }) => pointAt(start, angle, distance, u, v))
+    .map(clampToViewport);
   return catmullRomToBezierPath(points);
 }
 
@@ -177,10 +190,10 @@ function runVisit() {
   mount.appendChild(visitor);
   requestAnimationFrame(() => visitor.classList.add("magical-visitor--visible"));
 
-  let dustTimer = null;
-  if (isDay) {
-    dustTimer = setInterval(() => spawnPixieDust(mount, visitor, color), PIXIE_DUST_INTERVAL_MS);
-  }
+  // Pixie-dust trail now applies to both variants (not day-only) — dots
+  // fade individually a couple seconds after being dropped, so the trail
+  // naturally lingers and fades out shortly after the flight completes.
+  const dustTimer = setInterval(() => spawnPixieDust(mount, visitor, color), PIXIE_DUST_INTERVAL_MS);
 
   setTimeout(() => {
     if (dustTimer) clearInterval(dustTimer);
