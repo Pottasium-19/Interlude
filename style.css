@@ -487,16 +487,23 @@ body.is-day #butterfly-layer { opacity: 1; }
   width: 3px;
   height: 3px;
   border-radius: 50%;
-  background: rgba(255, 250, 235, 0.5);
-  box-shadow: 0 0 4px 1.5px rgba(255, 244, 210, 0.35);
+  background: rgba(255, 250, 235, 0.6);
+  box-shadow:
+    0 0 5px 2px rgba(255, 244, 210, 0.45),
+    0 0 13px 6px rgba(255, 224, 170, 0.2);
   transform: translate(-50%, -50%);
-  animation: pollen-trail-disperse 3.2s ease-out forwards;
+  animation: pollen-trail-disperse 4.2s ease-in forwards;
   pointer-events: none;
 }
 
+/* Holds near-full glow through the first ~60% of its life, then fades
+   over the remaining ~40% — lingering magic, not an instant vanish.
+   Duration stretched from 3.2s to 4.2s so it has room to breathe. */
 @keyframes pollen-trail-disperse {
-  0%   { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -50%) translateY(-10px) scale(0.4); }
+  0%   { opacity: 0.6;  transform: translate(-50%, -50%) scale(1); }
+  60%  { opacity: 0.56; transform: translate(-50%, -50%) translateY(-6px) scale(0.92); }
+  82%  { opacity: 0.35; transform: translate(-50%, -50%) translateY(-9px) scale(0.65); }
+  100% { opacity: 0;    transform: translate(-50%, -50%) translateY(-12px) scale(0.4); }
 }
 
 /* --- Shooting stars: an extremely rare, ~1s silent streak across the
@@ -768,15 +775,23 @@ body.is-dawn #light-rays-layer {
   height: 3px;
   border-radius: 50%;
   background: var(--visitor-color, #fff6df);
-  box-shadow: 0 0 5px 2px var(--visitor-color, #fff6df);
+  box-shadow:
+    0 0 6px 2px var(--visitor-color, #fff6df),
+    0 0 16px 7px var(--visitor-color, #fff6df);
   transform: translate(-50%, -50%);
-  animation: pixie-dust-disperse 2s ease-out forwards;
+  animation: pixie-dust-disperse 3.2s ease-in forwards;
   pointer-events: none;
 }
 
+/* Same hold-then-fade shape as pollen-trail-disperse — glow stays
+   visible through most of the trail's life, only dropping off near
+   the end, so the visitor's whole path stays lit as it travels
+   instead of each mote blinking out right behind it. */
 @keyframes pixie-dust-disperse {
-  0%   { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -50%) translateY(8px) scale(0.3); }
+  0%   { opacity: 0.72; transform: translate(-50%, -50%) scale(1); }
+  62%  { opacity: 0.66; transform: translate(-50%, -50%) translateY(4px) scale(0.94); }
+  85%  { opacity: 0.4;  transform: translate(-50%, -50%) translateY(7px) scale(0.6); }
+  100% { opacity: 0;    transform: translate(-50%, -50%) translateY(9px) scale(0.3); }
 }
 
 /* The tiny glowing particle left behind on the destination flower after
@@ -787,15 +802,24 @@ body.is-dawn #light-rays-layer {
   height: 5px;
   border-radius: 50%;
   background: var(--visitor-color, #fff6df);
-  box-shadow: 0 0 8px 3px var(--visitor-color, #fff6df);
+  box-shadow:
+    0 0 9px 3px var(--visitor-color, #fff6df),
+    0 0 20px 9px var(--visitor-color, #fff6df);
   transform: translate(-50%, -50%);
-  animation: magical-visitor-particle-fade 4.4s ease-out forwards;
+  animation: magical-visitor-particle-fade 6s ease-in forwards;
   pointer-events: none;
 }
 
+/* This is the one lingering mark left behind after the whole visitor
+   sequence — stretched from 4.4s to 6s and held near-full opacity
+   through ~55% of that before easing out, so it reads as an
+   afterglow that slowly settles rather than a particle that
+   immediately starts dying the moment it's placed. */
 @keyframes magical-visitor-particle-fade {
-  0%   { opacity: 0.9; transform: translate(-50%, -50%) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -50%) translateY(-6px) scale(0.5); }
+  0%   { opacity: 0.92; transform: translate(-50%, -50%) scale(1); }
+  55%  { opacity: 0.86; transform: translate(-50%, -50%) translateY(-3px) scale(0.96); }
+  80%  { opacity: 0.5;  transform: translate(-50%, -50%) translateY(-5px) scale(0.7); }
+  100% { opacity: 0;    transform: translate(-50%, -50%) translateY(-7px) scale(0.5); }
 }
 
 /* The destination flower's welcome response: a gentle glow + sway,
@@ -1092,6 +1116,18 @@ body.is-night .garden-flower--mine .garden-flower__graphic {
   font-size: 0;
   line-height: 0;
   color: transparent;
+  transition: filter 1.4s ease;
+}
+
+/* Ambient Polish Pass — night grading for the control icons. Same
+   filter recipe already used on the identity flowers (see
+   "body.is-night .garden-flower__graphic" further down) — dim,
+   desaturate, cool toward blue — so the icons pick up the same
+   lighting logic as everything else in the scene instead of staying
+   at full daylight brightness while the world around them cools down.
+   No new PNGs, no icon redesign — filter only, same as the flowers. */
+body.is-night .icon-btn {
+  filter: brightness(0.87) saturate(0.72) hue-rotate(6deg);
 }
 
 #join-btn.icon-btn {
