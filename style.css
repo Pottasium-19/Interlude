@@ -414,10 +414,10 @@ body.is-day #butterfly-layer { opacity: 1; }
 
 .shooting-star {
   position: absolute;
-  height: 2px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.85) 70%, #fff 100%);
-  box-shadow: 0 0 6px 1px rgba(255, 255, 255, 0.55);
+  height: 4px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.75) 55%, rgba(255, 255, 255, 0.95) 85%, #fff 100%);
+  box-shadow: 0 0 12px 3px rgba(255, 255, 255, 0.6);
   transform-origin: right center;
   /* translate outermost so it moves along true screen axes; rotate
      innermost so it only reorients the streak in place around its head
@@ -428,11 +428,45 @@ body.is-day #butterfly-layer { opacity: 1; }
   will-change: transform, opacity;
 }
 
+/* Bright particle head at the leading edge — makes the longer
+   edge-to-edge flight read clearly as a single traveling point. */
+.shooting-star::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 10px 4px rgba(255, 255, 255, 0.85);
+  transform: translate(0, -50%);
+}
+
 @keyframes shooting-star-streak {
   0%   { opacity: 0;    transform: translate(0, 0) rotate(var(--angle, 35deg)); }
   10%  { opacity: 1; }
   70%  { opacity: 0.85; }
   100% { opacity: 0;    transform: translate(var(--tx, 26vw), var(--ty, 16vh)) rotate(var(--angle, 35deg)); }
+}
+
+/* Flowing trail dots, dropped behind the star as it travels and
+   self-fading shortly after — spawned by shootingStars.js. */
+.shooting-star-trail-dot {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.55);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: shooting-star-trail-fade 900ms ease-out forwards;
+}
+
+@keyframes shooting-star-trail-fade {
+  0%   { opacity: 0.85; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0;    transform: translate(-50%, -50%) scale(0.4); }
 }
 
 /* --- Dawn fog: a very faint, slow-drifting haze weighted toward the
