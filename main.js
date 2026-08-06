@@ -187,7 +187,10 @@ function slotToFlower(slot) {
 function init() {
   renderGardenEntry();
   renderConnectionStatus("The garden is quiet.");
-  initLibrary();
+  initLibrary("pink");
+initLibrary("lavender");
+ initFlower("pink");
+ initFlower("lavender");
   playerReadyPromise = initPlayer("youtube-player");
   setCallbacks({ onEnd: handleAutoNext, onError: handleAutoNext });
   bindJoinButton(joinRoom);
