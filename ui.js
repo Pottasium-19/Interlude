@@ -207,13 +207,14 @@ export function bindFlowerSelect(onJoin, onToggleLibrary) {
   ].forEach(([node, flowerId]) => {
     if (!node) return;
     const activate = () => {
-      if (document.body.classList.contains("is-joined")) {
-        if (node.classList.contains("garden-flower--mine")) {
-          onToggleLibrary(flowerId);
-        }
+      const isJoined = document.body.classList.contains("is-joined");
+      const isEditable = !isJoined || node.classList.contains("garden-flower--mine") || node.classList.contains("garden-flower--partner");
+    if (isEditable) {
+       onToggleLibrary(flowerId);
         return;
       }
-      onJoin(flowerId);
+     onJoin(flowerId);
+    };
     };
     node.addEventListener("click", activate);
     node.addEventListener("keydown", (e) => {
