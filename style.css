@@ -1,4 +1,4 @@
-/* Intentionally minimal — visuals are not the concern of Phase 1. */
+/* Intentionally minimal visuals are not the concern of Phase 1. */
 
 /* --ink/--parchment/--gold were previously only defined inside
    #garden-screen's own scope, so anything using them outside that
