@@ -52,12 +52,14 @@ import {
   bindPlayerControls,
   bindReloadButton,
   bindLeaveButton,
-  bindJoinButton,
   bindFlowerSelect,
   toggleLibraryPanel,
   closeLibraryPanel,
   bindLibraryClose,
   bindLibraryOverlayClose,
+  bindLibraryJoin,
+  setLibraryJoinVisible,
+  getOpenLibraryFlowerId,
   setControlsEnabled,
   setJoinedState,
   setJoinButtonEnabled,
@@ -86,10 +88,8 @@ import {
   addPetalRemote,
   removePetalRemote,
   movePetalRemote,
-  getFlowerSnapshot,
-  listenToFlowerById
+  getFlowerSnapshot
 } from "./gardenFlowers.js";
-
 
 import {
   initPlayer,
@@ -113,9 +113,8 @@ import {
   buildSeededQueue
 } from "./queue.js";
 
-let myLibraryVideoIds = [];
-let myLibraryTitles = {};
-let currentFlowerLayers = null;
+let librarySongsCache = { pink: [], lavender: [] };
+let flowerLayersCache = { pink: null, lavender: null };
 let stopQueueListener = null;
 let mySlot = null;
 let myUserId = null;
@@ -140,10 +139,7 @@ let lastLoadedVideoId = null;
 let currentQueueSeed = null;
 let currentQueueIndex = null;
 let pendingManualPlayVideoId = null;
-let myFlowerVideoIds = [];
-let otherFlowerVideoIds = [];
-let stopOtherFlowerListener = null;
-let stopMyFlowerListener = null;
+let flowerVideoIds = { pink: [], lavender: [] };
 let lastLoadedAt = 0;
 let sessionActive = false;
 let latestPlayerData = null;
@@ -190,15 +186,15 @@ function init() {
   renderGardenEntry();
   renderConnectionStatus("The garden is quiet.");
   initLibrary("pink");
-initLibrary("lavender");
- initFlower("pink");
- initFlower("lavender");
+  initLibrary("lavender");
+  initFlower("pink");
+  initFlower("lavender");
   playerReadyPromise = initPlayer("youtube-player");
   setCallbacks({ onEnd: handleAutoNext, onError: handleAutoNext });
-  bindJoinButton(joinRoom);
-  bindFlowerSelect(joinRoom, toggleLibraryPanel);
+  bindFlowerSelect(handleToggleLibrary);
   bindLibraryClose(closeLibraryPanel);
   bindLibraryOverlayClose(closeLibraryPanel);
+  bindLibraryJoin(handleLibraryJoin);
   bindLeaveButton(handleLeaveRoom);
   bindReadyButton(async () => {
     await setReady(mySlot, !myCurrentlyReady);
@@ -242,33 +238,81 @@ function applyEnvironment() {
   setTimeOfDay(getTimePeriod());
 }
 
-function initFlower() {
-  listenToFlower(myFlowerId(), (layers) => {
-    currentFlowerLayers = layers;
-    renderFlower(layers, handleFlowerRemove, handleFlowerMove, handleFlowerPlay, (videoId) => myLibraryTitles[videoId]);
-    myFlowerVideoIds = [...layers.outer, ...layers.middle, ...layers.inner];
+function initFlower(flowerId) {
+  listenToFlower(flowerId, (layers) => {
+    flowerLayersCache[flowerId] = layers;
+    flowerVideoIds[flowerId] = [...layers.outer, ...layers.middle, ...layers.inner];
     updateQueueCount();
+    if (getOpenLibraryFlowerId() === flowerId) renderActiveFlowerPanel(flowerId);
   });
 }
 
 function updateQueueCount() {
-  const combined = new Set([...myFlowerVideoIds, ...otherFlowerVideoIds]);
+  const combined = new Set([...flowerVideoIds.pink, ...flowerVideoIds.lavender]);
   renderQueueCount(combined.size);
 }
 
-async function handleFlowerAdd(videoId, layer) {
-  const applied = await addPetalRemote(myFlowerId(), videoId, layer);
+function titleLookup(flowerId) {
+  return (videoId) => {
+    const song = librarySongsCache[flowerId].find((s) => s.videoId === videoId);
+    return song && song.title;
+  };
+}
+
+function renderActiveLibraryPanel(flowerId) {
+  renderLibrary(
+    librarySongsCache[flowerId],
+    (videoId) => handleLibraryRemove(flowerId, videoId),
+    (videoId, layer) => handleFlowerAdd(flowerId, videoId, layer)
+  );
+}
+
+function renderActiveFlowerPanel(flowerId) {
+  const layers = flowerLayersCache[flowerId];
+  if (!layers) return;
+  renderFlower(
+    layers,
+    (videoId) => handleFlowerRemove(flowerId, videoId),
+    (videoId, toLayer) => handleFlowerMove(flowerId, videoId, toLayer),
+    handleFlowerPlay,
+    titleLookup(flowerId)
+  );
+}
+
+/**
+ * Own-flower rule for the Join Room control: shown whenever this
+ * device hasn't joined a room yet (mySlot is null) — before joining,
+ * either flower could still become mine, and after joining there's
+ * never any ambiguity left to show it for (my own flower is already
+ * connected; the partner's flower must never show it).
+ */
+function handleToggleLibrary(flowerId) {
+  toggleLibraryPanel(flowerId);
+  if (getOpenLibraryFlowerId() === flowerId) {
+    renderActiveLibraryPanel(flowerId);
+    renderActiveFlowerPanel(flowerId);
+    setLibraryJoinVisible(!mySlot);
+  }
+}
+
+function handleLibraryJoin() {
+  const flowerId = getOpenLibraryFlowerId();
+  if (flowerId) joinRoom(flowerId);
+}
+
+async function handleFlowerAdd(flowerId, videoId, layer) {
+  const applied = await addPetalRemote(flowerId, videoId, layer);
   if (!applied) {
     renderLibraryMessage(`Couldn't add to ${layer} — it may be full or already on the flower.`);
   }
 }
 
-async function handleFlowerRemove(videoId) {
-  await removePetalRemote(myFlowerId(), videoId);
+async function handleFlowerRemove(flowerId, videoId) {
+  await removePetalRemote(flowerId, videoId);
 }
 
-async function handleFlowerMove(videoId, toLayer) {
-  const applied = await movePetalRemote(myFlowerId(), videoId, toLayer);
+async function handleFlowerMove(flowerId, videoId, toLayer) {
+  const applied = await movePetalRemote(flowerId, videoId, toLayer);
   if (!applied) {
     renderLibraryMessage(`Couldn't move to ${toLayer} — it's probably full.`);
   }
