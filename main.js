@@ -8,6 +8,7 @@ import { getTimePeriod } from "./environmentState.js";
 import { scheduleWindGusts } from "./ambientEvents.js";
 import { schedulePollenTrails } from "./pollenTrails.js";
 import { scheduleShootingStars } from "./shootingStars.js";
+import { bindDevTimeOverride } from "./devTimeOverride.js";
 import { scheduleMagicalVisitor } from "./magicalVisitor.js";
 import {
   claimSlot,
@@ -205,6 +206,7 @@ function init() {
   });
   bindReloadButton(handleReload);
   bindArtModeToggle();
+  bindDevTimeOverride();
 
   applyEnvironment();
   setInterval(applyEnvironment, ENVIRONMENT_POLL_MS);
