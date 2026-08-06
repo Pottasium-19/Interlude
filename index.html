@@ -12,6 +12,7 @@
 <body>
   <div id="garden-screen">
     <div class="garden-scene" aria-hidden="true"></div>
+    <div class="rain-scene-layer" aria-hidden="true"></div>
     <h1 id="garden-title">Interlude</h1>
     <p id="garden-subtitle">Choose Your Flower</p>
     <p id="connection-status">The garden is quiet.</p>
@@ -41,6 +42,19 @@
     <span class="pollen-mote" style="--x:57%; --y:44%; --drift-dur:25s; --delay:4.6s;"></span>
     <span class="pollen-mote" style="--x:73%; --y:26%; --drift-dur:21s; --delay:2s;"></span>
     <span class="pollen-mote" style="--x:88%; --y:48%; --drift-dur:24s; --delay:5.4s;"></span>
+  </div>
+  <div id="rain-layer" aria-hidden="true">
+    <span class="rain-streaks rain-streaks--far"></span>
+    <span class="rain-streaks rain-streaks--mid"></span>
+    <span class="rain-streaks rain-streaks--near"></span>
+    <span class="rain-mist"></span>
+  </div>
+  <div id="rain-splash-layer" aria-hidden="true">
+    <span class="rain-splash" style="--x:15%; --y:6%; --delay:0s;   --dur:1.6s;"></span>
+    <span class="rain-splash" style="--x:34%; --y:3%; --delay:0.6s; --dur:1.9s;"></span>
+    <span class="rain-splash" style="--x:52%; --y:8%; --delay:1.2s; --dur:1.5s;"></span>
+    <span class="rain-splash" style="--x:71%; --y:4%; --delay:0.3s; --dur:2s;"></span>
+    <span class="rain-splash" style="--x:87%; --y:7%; --delay:1.6s; --dur:1.7s;"></span>
   </div>
   <div id="shooting-star-layer" aria-hidden="true"></div>
   <div id="dawn-fog-layer" aria-hidden="true"></div>
@@ -76,6 +90,7 @@
   </div>
   <main id="app">
     <div class="garden-scene" aria-hidden="true"></div>
+    <div class="rain-scene-layer" aria-hidden="true"></div>
     <h1>Interlude</h1>
     <p class="note">A little pause goes a long way</p>
 
