@@ -16,7 +16,6 @@ const el = {
   nextBtn: () => document.getElementById("next-btn"),
   reloadBtn: () => document.getElementById("reload-btn"),
   leaveBtn: () => document.getElementById("leave-btn"),
-  joinBtn: () => document.getElementById("join-btn"),
   libraryInput: () => document.getElementById("library-input"),
   libraryAddBtn: () => document.getElementById("library-add-btn"),
   libraryList: () => document.getElementById("library-list"),
@@ -132,14 +131,10 @@ export function bindLeaveButton(handler) {
   el.leaveBtn().addEventListener("click", handler);
 }
 
-export function bindJoinButton(handler) {
-  el.joinBtn().addEventListener("click", handler);
-}
-
 export function setJoinButtonEnabled(enabled) {
-  el.joinBtn().disabled = !enabled;
+  const btn = el.libraryJoinBtn();
+  if (btn) btn.disabled = !enabled;
 }
-
 export function setJoinedState(isJoined) {
   el.leaveBtn().disabled = !isJoined;
   setControlsEnabled(isJoined);
