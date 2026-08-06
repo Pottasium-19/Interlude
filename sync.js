@@ -1,7 +1,7 @@
 // sync.js
 // Single responsibility: the actual synchronization primitives —
 // ready state, the shared countdown, and the shared player state.
-// This is the "heart" of the app; it knows nothing about UI or DOM.
+
 
 import { db } from "./firebase.js";
 import {
