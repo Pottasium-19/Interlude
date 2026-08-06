@@ -390,15 +390,22 @@ body.is-day #butterfly-layer { opacity: 1; }
   to   { transform: scaleX(calc(1 - (0.7 * var(--flap-envelope, 1)))); }
 }
 
-/* Lands and rests near the pink flower (left:42%, bottom:7%) partway through */
+/* Lands and rests near the pink flower (left:42%, bottom:7%) partway through.
+   Ambient Polish Pass: approach/departure widened to cover much more of the
+   screen and swing higher — 46%/68% (the landing itself, left:42%/bottom:9%)
+   are left exactly as they were, since butterfly-flap-envelope-1 (Part 2) is
+   timed to those same percentages. Changing them would desync the resting
+   flap from the actual landing. */
 @keyframes butterfly-path-1 {
-  0%   { left: 4%;  bottom: 46%; }
-  20%  { left: 20%; bottom: 62%; }
-  38%  { left: 34%; bottom: 22%; }
+  0%   { left: 3%;  bottom: 42%; }
+  16%  { left: 15%; bottom: 74%; }
+  30%  { left: 26%; bottom: 68%; }
+  38%  { left: 34%; bottom: 24%; }
   46%  { left: 42%; bottom: 9%; }
   68%  { left: 42%; bottom: 9%; }
-  84%  { left: 63%; bottom: 50%; }
-  100% { left: 92%; bottom: 40%; }
+  78%  { left: 56%; bottom: 62%; }
+  90%  { left: 74%; bottom: 76%; }
+  100% { left: 96%; bottom: 40%; }
 }
 
 /* Flap dampens just before touchdown (40%), bottoms out through the
@@ -412,25 +419,35 @@ body.is-day #butterfly-layer { opacity: 1; }
   74%, 100% { --flap-envelope: 1; }
 }
 
-/* Never lands — just lazy edge-to-edge fluttering */
+/* Never lands — long, wide, edge-to-edge wandering. Ambient Polish Pass:
+   range widened from left 12%-90% / bottom 30%-58% to roughly edge-to-edge
+   and up into the higher sky, with an extra waypoint for a longer, more
+   graceful curve. Start/end values still match exactly, so the infinite
+   loop stays seamless. */
 @keyframes butterfly-path-2 {
-  0%   { left: 90%; bottom: 34%; }
-  28%  { left: 62%; bottom: 58%; }
-  52%  { left: 33%; bottom: 30%; }
-  76%  { left: 12%; bottom: 52%; }
-  100% { left: 90%; bottom: 34%; }
+  0%   { left: 94%; bottom: 30%; }
+  16%  { left: 78%; bottom: 68%; }
+  32%  { left: 58%; bottom: 74%; }
+  48%  { left: 38%; bottom: 26%; }
+  64%  { left: 20%; bottom: 66%; }
+  82%  { left: 6%;  bottom: 44%; }
+  100% { left: 94%; bottom: 30%; }
 }
-
 /* Lands and rests near the lavender flower (left:27%, bottom:7%) */
-/* Lands and rests near the lavender flower (left:27%, bottom:7%) */
+/* Lands and rests near the lavender flower (left:27%, bottom:7%).
+   Ambient Polish Pass: approach/departure widened, same rule as
+   butterfly-path-1 — 54%/72% (left:27%/bottom:9%) are untouched since
+   butterfly-flap-envelope-3 (Part 2) is timed to those same percentages. */
 @keyframes butterfly-path-3 {
-  0%   { left: 95%; bottom: 58%; }
-  24%  { left: 60%; bottom: 38%; }
+  0%   { left: 97%; bottom: 62%; }
+  14%  { left: 82%; bottom: 78%; }
+  30%  { left: 58%; bottom: 70%; }
   42%  { left: 32%; bottom: 16%; }
   54%  { left: 27%; bottom: 9%; }
   72%  { left: 27%; bottom: 9%; }
-  90%  { left: 8%;  bottom: 54%; }
-  100% { left: 95%; bottom: 58%; }
+  84%  { left: 16%; bottom: 66%; }
+  94%  { left: 5%;  bottom: 76%; }
+  100% { left: 97%; bottom: 62%; }
 }
 
 /* Same lead-in/lead-out logic as butterfly-flap-envelope-1, timed to
