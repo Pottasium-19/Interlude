@@ -52,6 +52,18 @@ export function getTimePeriodOverride() {
   return timePeriodOverride;
 }
 
+let rainOverride = null; // true | false | null (null = scheduler-driven)
+
+/** Sets/clears the manual rain override. true=force rain, false=force clear, null=auto. */
+export function setRainOverride(value) {
+  rainOverride = value;
+}
+
+/** Returns the current rain override, or null if scheduler-driven. */
+export function getRainOverride() {
+  return rainOverride;
+}
+
 /**
  * Returns 'dawn', 'day', 'sunset', or 'night' for the given date's
  * local hour. Defaults to the current time if no date is passed. If a
