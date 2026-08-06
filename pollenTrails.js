@@ -14,6 +14,10 @@ function isDaytime() {
   return document.body.classList.contains("is-day");
 }
 
+function isRaining() {
+  return document.body.classList.contains("is-rain");
+}
+
 function spawnTrailDot() {
   const butterflies = document.querySelectorAll("#butterfly-layer .butterfly");
   const visible = Array.from(butterflies).filter((b) => b.offsetParent !== null);
@@ -34,7 +38,7 @@ function spawnTrailDot() {
 }
 
 function tick() {
-  if (isDaytime() && Math.random() < SPAWN_CHANCE) {
+  if (isDaytime() && !isRaining() && Math.random() < SPAWN_CHANCE) {
     spawnTrailDot();
   }
   setTimeout(tick, CHECK_INTERVAL_MS);
