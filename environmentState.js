@@ -36,8 +36,7 @@ function dayKey(date) {
   return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 }
 
-/**
- // In-memory only (never persisted) — a test override set via
+// In-memory only (never persisted) — a test override set via
 // devTimeOverride.js's long-press picker. Resets to null (real clock
 // detection) on every reload/new session automatically, simply by
 // virtue of being a plain module variable.
