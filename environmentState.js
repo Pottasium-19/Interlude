@@ -37,10 +37,30 @@ function dayKey(date) {
 }
 
 /**
+ // In-memory only (never persisted) — a test override set via
+// devTimeOverride.js's long-press picker. Resets to null (real clock
+// detection) on every reload/new session automatically, simply by
+// virtue of being a plain module variable.
+let timePeriodOverride = null;
+
+/** Sets/clears the test override. Pass "day", "night", or null (real clock). */
+export function setTimePeriodOverride(period) {
+  timePeriodOverride = period;
+}
+
+/** Returns the current test override, or null if real clock detection is active. */
+export function getTimePeriodOverride() {
+  return timePeriodOverride;
+}
+
+/**
  * Returns 'dawn', 'day', 'sunset', or 'night' for the given date's
- * local hour. Defaults to the current time if no date is passed.
+ * local hour. Defaults to the current time if no date is passed. If a
+ * test override is set, it takes priority and the real clock is
+ * ignored — this is the only thing that changes when overriding.
  */
 export function getTimePeriod(date = new Date()) {
+  if (timePeriodOverride) return timePeriodOverride;
   const hour = date.getHours();
   if (hour >= NIGHT_START_HOUR || hour < DAWN_START_HOUR) return "night";
   if (hour >= SUNSET_START_HOUR) return "sunset";
