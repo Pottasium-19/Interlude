@@ -510,13 +510,19 @@ export function renderQueueCount(count) {
  * which independently gates the dawn-fog layer only. Per the owner's call,
  * dawn still reads visually as day (is-day stays true) and sunset still
  * reads visually as night, since we only have day + night art right now —
- * is-dawn is additive, not a replacement for that pairing.
+ * is-dawn is additive, not a replacement for that pairing. is-sunset
+ * (Ambient Polish Pass) is additive the same way — it does not change
+ * the is-night/is-day pairing above, it only gates a warm CSS overlay
+ * in style.css that fades in while is-night is already quietly starting
+ * its own fade, so the scene reads as "warming, then cooling into night"
+ * instead of jumping straight to night art.
  */
 export function setTimeOfDay(period) {
   const isNight = period === "night" || period === "sunset";
   document.body.classList.toggle("is-night", isNight);
   document.body.classList.toggle("is-day", !isNight);
   document.body.classList.toggle("is-dawn", period === "dawn");
+  document.body.classList.toggle("is-sunset", period === "sunset");
 }
 
 /** Tiny deterministic hash — same shape as environmentState.js's private
