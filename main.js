@@ -195,6 +195,17 @@ function init() {
   bindLibraryClose(closeLibraryPanel);
   bindLibraryOverlayClose(closeLibraryPanel);
   bindLibraryJoin(handleLibraryJoin);
+  bindLibraryAdd(async (rawInput) => {
+    const flowerId = getOpenLibraryFlowerId();
+    if (!flowerId || !rawInput || !rawInput.trim()) return;
+    const result = await addToLibrary(flowerId, rawInput);
+    renderLibraryMessage(result.ok ? "" : LIBRARY_MESSAGES[result.reason] || "");
+    if (result.ok) {
+      notify("success", "Added to your library.");
+    } else {
+      notify("warning", LIBRARY_MESSAGES[result.reason] || "Couldn't save that song.");
+    }
+  });
   bindLeaveButton(handleLeaveRoom);
   bindReadyButton(async () => {
     await setReady(mySlot, !myCurrentlyReady);
@@ -470,17 +481,7 @@ async function joinRoom(preferredFlower) {
   pendingManualPlayVideoId = null;
   pendingReloadRequested = false;
 
-  // Flowers are tied to the room slot, not to whichever userId happens
-  // to occupy it, so both listeners are set up once here, keyed off
-  // mySlot/otherSlot — not re-subscribed every time presence reports
-  // a different otherUserId.
- initFlower();
- otherFlowerVideoIds = [];
- stopOtherFlowerListener = listenToFlowerById(otherFlowerId(), (layers) => {
-  otherFlowerVideoIds = [...layers.outer, ...layers.middle, ...layers.inner];
-   updateQueueCount();
-  });
-  updateQueueCount();
+ 
 
   // Presence: heartbeat for this user, listener for the other user.
   stopHeartbeat = startHeartbeat(myUserId, mySlot, mySessionId);
@@ -544,12 +545,13 @@ async function joinRoom(preferredFlower) {
     }
   });
 
-  joining = false;
+joining = false;
   setJoinedState(true);
   setGardenFlowerRoles(myFlowerId(), true);
   markGardenPicked();
   setPlaybackControlsEnabled(false);
   sessionActive = false;
+  setLibraryJoinVisible(false);
 }
 
 const LIBRARY_MESSAGES = {
@@ -558,40 +560,23 @@ const LIBRARY_MESSAGES = {
   error: "Couldn't save that song — please try again."
 };
 
-function initLibrary() {
-  listenToLibrary((songs) => {
-    renderLibrary(
-      songs,
-      async (videoId) => {
-        const result = await removeFromLibrary(videoId);
-        if (!result.ok) {
-          renderLibraryMessage(LIBRARY_MESSAGES[result.reason] || "Couldn't remove that song — please try again.");
-        }
-        await removePetalRemote(myFlowerId(), videoId);;
-      },
-      handleFlowerAdd
-    );
-    myLibraryVideoIds = songs.map((song) => song.videoId);
-    myLibraryTitles = Object.fromEntries(
-      songs.filter((song) => !!song.title).map((song) => [song.videoId, song.title])
-    );
-        if (currentFlowerLayers) {
-      renderFlower(currentFlowerLayers, handleFlowerRemove, handleFlowerMove, handleFlowerPlay, (videoId) => myLibraryTitles[videoId]);
-    }
-  });
-
-  bindLibraryAdd(async (rawInput) => {
-    if (!rawInput || !rawInput.trim()) return;
-    const result = await addToLibrary(rawInput);
-    renderLibraryMessage(result.ok ? "" : LIBRARY_MESSAGES[result.reason] || "");
-    if (result.ok) {
-      notify("success", "Added to your library.");
-    } else {
-      notify("warning", LIBRARY_MESSAGES[result.reason] || "Couldn't save that song.");
+function initLibrary(flowerId) {
+  listenToLibrary(flowerId, (songs) => {
+    librarySongsCache[flowerId] = songs;
+    if (getOpenLibraryFlowerId() === flowerId) {
+      renderActiveLibraryPanel(flowerId);
+      renderActiveFlowerPanel(flowerId);
     }
   });
 }
 
+async function handleLibraryRemove(flowerId, videoId) {
+  const result = await removeFromLibrary(flowerId, videoId);
+  if (!result.ok) {
+    renderLibraryMessage(LIBRARY_MESSAGES[result.reason] || "Couldn't remove that song — please try again.");
+  }
+  await removePetalRemote(flowerId, videoId);
+}
 function refreshConnectionLabel() {
   renderConnectionStatus(otherConnected ? "Both here, together." : "Waiting for your companion to arrive...");
 }
@@ -705,17 +690,6 @@ function stopAllRoomListeners() {
     clearInterval(countdownIntervalId);
     countdownIntervalId = null;
   }
-  if (stopOtherFlowerListener) {
-    stopOtherFlowerListener();
-    stopOtherFlowerListener = null;
-  }
-
-  if (stopMyFlowerListener) {
-   stopMyFlowerListener();
-    stopMyFlowerListener = null;
- }
-  
-  otherFlowerVideoIds = [];
   [stopPresenceListener, stopRoomListener, stopReadyListener, stopSyncListener, stopPlayerListener, stopQueueListener].forEach(
     (stop) => stop && stop()
   );
