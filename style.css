@@ -1977,3 +1977,8 @@ body.is-rain #pollen-layer { opacity: 0; }
 .garden-flower__graphic {
   opacity: 0;
 }
+
+.garden-flower--pink,
+.garden-flower--lavender {
+  outline: 2px solid red;
+}
