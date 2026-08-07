@@ -9,6 +9,7 @@ import { scheduleWindGusts } from "./ambientEvents.js";
 import { schedulePollenTrails } from "./pollenTrails.js";
 import { scheduleRain } from "./rainScheduler.js";
 import { scheduleRaindropHits } from "./rainDrops.js";
+import { scheduleRainfall } from "./rainfall.js";
 import { scheduleShootingStars } from "./shootingStars.js";
 import { bindDevTimeOverride } from "./devTimeOverride.js";
 import { scheduleMagicalVisitor } from "./magicalVisitor.js";
@@ -227,6 +228,7 @@ function init() {
   schedulePollenTrails();
   scheduleRain();
   scheduleRaindropHits();
+  scheduleRainfall();
   scheduleShootingStars();
   scheduleMagicalVisitor();
 
