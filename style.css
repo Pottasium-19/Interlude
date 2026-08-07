@@ -1982,3 +1982,21 @@ body.is-rain #pollen-layer { opacity: 0; }
 .garden-flower--lavender {
   outline: 2px solid red;
 }
+
+.garden-flower--pink {
+  left: 1% !important;
+  width: 30% !important;
+  height: 32% !important;
+  bottom: 20% !important;
+}
+.garden-flower--lavender {
+  left: 68% !important;
+  width: 30% !important;
+  height: 32% !important;
+  bottom: 20% !important;
+}
+.garden-flower--pink .garden-flower__graphic,
+.garden-flower--lavender .garden-flower__graphic {
+  width: 100% !important;
+  height: 100% !important;
+}
