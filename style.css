@@ -1987,13 +1987,13 @@ body.is-rain #pollen-layer { opacity: 0; }
   left: 1% !important;
   width: 30% !important;
   height: 32% !important;
-  bottom: 20% !important;
+  bottom: 8% !important;
 }
 .garden-flower--lavender {
   left: 68% !important;
   width: 30% !important;
   height: 32% !important;
-  bottom: 20% !important;
+  bottom: 8% !important;
 }
 .garden-flower--pink .garden-flower__graphic,
 .garden-flower--lavender .garden-flower__graphic {
