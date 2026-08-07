@@ -971,8 +971,8 @@ body.is-sunset .garden-scene::before {
   animation: garden-rise 1.1s ease-out 0.4s both, garden-sway 6s ease-in-out infinite;
 }
 
-.garden-flower--pink { left: 32%; }
-.garden-flower--lavender { left: 58%; }
+.garden-flower--pink { left: 1%; width: 30%; height: 32%; bottom: 20%; }
+.garden-flower--lavender { left: 68%; width: 30%; height: 32%; bottom: 20%; }
 
 .garden-flower:hover,
 .garden-flower:focus-visible {
@@ -1286,8 +1286,8 @@ body:not(.is-playing) #pause-btn.icon-btn {
 /* --- Flowers (garden entry screen) --- */
 .garden-flower--pink .garden-flower__graphic,
 .garden-flower--lavender .garden-flower__graphic {
-  width: 5.6rem;
-  height: 8rem;
+  width: 100%;
+  height: 100%;
 }
 
 .garden-flower--pink { left: 42%; bottom: 7%; }
