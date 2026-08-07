@@ -864,7 +864,7 @@ body.is-dawn #light-rays-layer {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-image: url("garden-scene.jpg");
+  background-image: url("garden-scene.png");
   background-repeat: no-repeat;
   background-position: bottom center;
   background-size: cover;
