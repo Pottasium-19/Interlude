@@ -1,6 +1,6 @@
 // flowerState.js
 // Single responsibility: track the petals (video IDs) on the current
-// user's own private flower, organized into three layers — outer (30),
+// user's own private flower, organized in three layers — outer (30),
 // middle (20),
 // inner (10) — each with its own capacity. A song can be on at most
 // one layer at a time.
