@@ -1974,9 +1974,6 @@ body.is-rain #pollen-layer { opacity: 0; }
   100% { transform: scale(1.8); opacity: 0; }
 }
 
-.garden-flower__graphic {
-  opacity: 0;
-}
 
 .garden-flower--pink,
 .garden-flower--lavender {
