@@ -1879,24 +1879,33 @@ body.is-rain .rain-scene-layer { opacity: 1; }
 }
 body.is-rain #rain-layer { opacity: 1; }
 
-.rain-streaks {
+.raindrop {
   position: absolute;
-  inset: -20% -10%;
-  background-image: repeating-linear-gradient(
-    100deg,
-    transparent 0px, transparent 9px,
-    rgba(210,225,240,var(--rain-alpha,0.35)) 10px, transparent 12px
+  top: -6%;
+  left: var(--x, 50%);
+  width: 1px;
+  height: var(--len, 16px);
+  background: linear-gradient(
+    to bottom,
+    rgba(225,235,248,0) 0%,
+    rgba(225,235,248,var(--op,0.3)) 65%,
+    rgba(225,235,248,0) 100%
   );
-  background-size: 3px 140px;
-  animation: rain-fall var(--rain-speed, 0.6s) linear infinite;
+  border-radius: 2px;
+  opacity: 0;
+  transform: rotate(var(--angle, 8deg));
+  pointer-events: none;
+  will-change: transform, opacity;
 }
-.rain-streaks--near { --rain-alpha: 0.42; --rain-speed: 0.45s; opacity: 0.9; }
-.rain-streaks--mid  { --rain-alpha: 0.28; --rain-speed: 0.65s; opacity: 0.6; filter: blur(0.4px); }
-.rain-streaks--far  { --rain-alpha: 0.16; --rain-speed: 0.9s;  opacity: 0.4; filter: blur(1px); }
+.raindrop.is-falling {
+  animation: raindrop-fall var(--dur, 5s) linear forwards;
+}
 
-@keyframes rain-fall {
-  0%   { background-position: 0 -140px; }
-  100% { background-position: -40px 0; }
+@keyframes raindrop-fall {
+  0%   { transform: translate(0, -10%) rotate(var(--angle, 8deg)); opacity: 0; }
+  8%   { opacity: var(--op, 0.3); }
+  85%  { opacity: var(--op, 0.3); }
+  100% { transform: translate(var(--drift, 18px), 115vh) rotate(var(--angle, 8deg)); opacity: 0; }
 }
 
 .rain-mist {
